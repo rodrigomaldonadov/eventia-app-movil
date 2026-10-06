@@ -9,11 +9,11 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#0b1c30',
+    background: '#f8f9ff',
+    backgroundElement: '#ffffff',
+    backgroundSelected: '#e5eeff',
+    textSecondary: '#464555',
   },
   dark: {
     text: '#ffffff',
@@ -25,6 +25,29 @@ export const Colors = {
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+
+/**
+ * Paleta de marca Eventia (tomada de la guía visual del catálogo).
+ * Los componentes del módulo 4 la usan para replicar cards, pills y header.
+ */
+export const Eventia = {
+  primary: '#3525cd',
+  primaryContainer: '#4f46e5',
+  onPrimary: '#ffffff',
+  /** Color de acento para textos destacados (precio, títulos de sección). */
+  price: '#4f46e5',
+  /** Franja de precio al pie de cada card. */
+  surfaceLow: '#eff4ff',
+  successBg: '#ECFDF5',
+  successText: '#065F46',
+  successDot: '#10B981',
+  warningBg: '#FFFBEB',
+  warningText: '#92400E',
+  warningDot: '#F59E0B',
+  dangerBg: '#FFF1F2',
+  dangerText: '#9F1239',
+  dangerDot: '#F43F5E',
+} as const;
 
 export const Fonts = Platform.select({
   ios: {
