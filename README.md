@@ -4,6 +4,11 @@
 
 Eventia es una plataforma móvil que conecta a usuarios interesados en asistir a eventos con organizadores que necesitan una solución para publicar eventos, gestionar entradas y controlar sus ventas.
 
+![React Native](https://img.shields.io/badge/React_Native-Android-61DAFB?logo=react&logoColor=white)
+![Expo](https://img.shields.io/badge/Expo-18-000020?logo=expo&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![NativeWind CSS](https://img.shields.io/badge/NativeWind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
+![Axios](https://img.shields.io/badge/Axios-HTTP_Client-5A29E4?logo=axios&logoColor=white)
 ---
 
 ## 📱 Sobre el proyecto
