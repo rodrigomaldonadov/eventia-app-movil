@@ -1,6 +1,6 @@
-import AppTabs from '@/components/app-tabs';
+import { Stack } from 'expo-router';
 
-/** Grupo de pestañas principales: Home, Entradas y Perfil. */
+/** Pestañas/Rutas principales sin barra inferior. */
 export default function TabsLayout() {
-  return <AppTabs />;
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
