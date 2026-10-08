@@ -1,62 +1,98 @@
-import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import * as Device from 'expo-device';
+import { Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
-import GlobalHeader from '@/components/GlobalHeader';
+import { AnimatedIcon } from '@/components/animated-icon';
+import { HintRow } from '@/components/hint-row';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { WebBadge } from '@/components/web-badge';
+import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 
-export default function HomeScreen() {
-  const router = useRouter();
-
+function getDevMenuHint() {
+  if (Platform.OS === 'web') {
+    return <ThemedText type="small">use browser devtools</ThemedText>;
+  }
+  if (Device.isDevice) {
+    return (
+      <ThemedText type="small">
+        shake device or press <ThemedText type="code">m</ThemedText> in terminal
+      </ThemedText>
+    );
+  }
+  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
   return (
-    <View className="flex-1 bg-slate-50">
-      {/* Global Header */}
-      <GlobalHeader />
-
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero Card */}
-        <View className="bg-indigo-600 rounded-3xl p-6 shadow-md mb-6">
-          <View className="self-start bg-indigo-500/50 px-3 py-1 rounded-full mb-3">
-            <Text className="text-white text-xs font-semibold">
-              Bienvenido a Eventia
-            </Text>
-          </View>
-
-          <Text className="text-2xl font-black text-white leading-tight">
-            Descubre y vive los mejores eventos cerca de ti
-          </Text>
-
-          <Text className="text-indigo-100 text-sm mt-2 mb-6">
-            Entradas digitales, accesos exclusivos y la mejor experiencia para tus eventos favoritos.
-          </Text>
-
-          <View className="flex-row items-center gap-3">
-            <Pressable
-              onPress={() => router.push('/register')}
-              className="bg-white px-5 py-3 rounded-2xl flex-row items-center active:bg-slate-100"
-            >
-              <Text className="text-indigo-700 font-bold text-sm mr-2">
-                Crear Cuenta
-              </Text>
-              <Ionicons name="arrow-forward" size={16} color="#4338CA" />
-            </Pressable>
-
-            <Pressable
-              onPress={() => router.push('/explore')}
-              className="bg-indigo-700/60 px-5 py-3 rounded-2xl flex-row items-center active:bg-indigo-700"
-            >
-              <Text className="text-white font-semibold text-sm">
-                Explorar
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </ScrollView>
-    </View>
+    <ThemedText type="small">
+      press <ThemedText type="code">{shortcut}</ThemedText>
+    </ThemedText>
   );
 }
+
+export default function HomeScreen() {
+  return (
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <ThemedView style={styles.heroSection}>
+          <AnimatedIcon />
+          <ThemedText type="title" style={styles.title}>
+            Welcome to&nbsp;Expo
+          </ThemedText>
+        </ThemedView>
+
+        <ThemedText type="code" style={styles.code}>
+          get started
+        </ThemedText>
+
+        <ThemedView type="backgroundElement" style={styles.stepContainer}>
+          <HintRow
+            title="Try editing"
+            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+          />
+          <HintRow title="Dev tools" hint={getDevMenuHint()} />
+          <HintRow
+            title="Fresh start"
+            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
+          />
+        </ThemedView>
+
+        {Platform.OS === 'web' && <WebBadge />}
+      </SafeAreaView>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  safeArea: {
+    flex: 1,
+    paddingHorizontal: Spacing.four,
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingBottom: BottomTabInset + Spacing.three,
+    maxWidth: MaxContentWidth,
+  },
+  heroSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.four,
+  },
+  title: {
+    textAlign: 'center',
+  },
+  code: {
+    textTransform: 'uppercase',
+  },
+  stepContainer: {
+    gap: Spacing.three,
+    alignSelf: 'stretch',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.four,
+    borderRadius: Spacing.four,
+  },
+});
