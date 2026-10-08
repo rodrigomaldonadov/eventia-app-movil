@@ -1,6 +1,11 @@
-import { Tabs, TabList, TabTrigger, TabSlot, type TabTriggerSlotProps } from 'expo-router/ui';
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import {
+  Tabs,
+  TabList,
+  TabTrigger,
+  TabSlot,
+  type TabTriggerSlotProps,
+} from 'expo-router/ui';
+import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -11,10 +16,7 @@ function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   return (
     <Pressable
       {...props}
-      style={[
-        styles.tabButton,
-        isFocused && { backgroundColor: theme.backgroundElement },
-      ]}>
+      style={[styles.tabButton, isFocused && { backgroundColor: theme.backgroundElement }]}>
       <ThemedText type="smallBold" themeColor={isFocused ? 'text' : 'textSecondary'}>
         {children}
       </ThemedText>
@@ -22,14 +24,21 @@ function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   );
 }
 
-export default function AppTabs() {
+function CustomTabList(props: ViewProps) {
   const theme = useTheme();
+  return (
+    <View style={[styles.list, { backgroundColor: theme.background }]}>
+      <View style={styles.inner}>{props.children}</View>
+    </View>
+  );
+}
 
+export default function AppTabs() {
   return (
     <Tabs style={styles.root}>
       <TabSlot style={styles.slot} />
-      <TabList style={[styles.list, { backgroundColor: theme.background }]}>
-        <View style={styles.inner}>
+      <TabList asChild>
+        <CustomTabList>
           <TabTrigger name="index" href="/" asChild>
             <TabButton>Explorar</TabButton>
           </TabTrigger>
@@ -42,7 +51,7 @@ export default function AppTabs() {
           <TabTrigger name="profile" href="/profile" asChild>
             <TabButton>Perfil</TabButton>
           </TabTrigger>
-        </View>
+        </CustomTabList>
       </TabList>
     </Tabs>
   );

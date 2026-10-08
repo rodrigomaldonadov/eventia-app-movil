@@ -89,6 +89,7 @@ export default function HomeCatalogScreen() {
         <FlatList
           data={listData}
           keyExtractor={(item) => item.id}
+          style={styles.flatList}
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             showSections ? (
@@ -177,6 +178,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  flatList: {
+    flex: 1,
   },
   list: {
     paddingHorizontal: Spacing.three,
