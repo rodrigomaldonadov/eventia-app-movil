@@ -10,7 +10,6 @@ export interface RegisterForm {
   email: string;
   password: string;
   confirmPassword: string;
-  acceptTerms: boolean;
 }
 
 export type RegisterErrors = Partial<Record<keyof RegisterForm, string>>;
@@ -25,5 +24,4 @@ export const INITIAL_REGISTER_FORM: RegisterForm = {
   email: '',
   password: '',
   confirmPassword: '',
-  acceptTerms: false,
 };

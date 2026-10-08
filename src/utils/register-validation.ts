@@ -71,7 +71,5 @@ export function validateForm(f: RegisterForm): RegisterErrors {
   else if (f.confirmPassword !== f.password)
     errors.confirmPassword = 'Las contraseñas no coinciden';
 
-  if (!f.acceptTerms) errors.acceptTerms = 'Debes aceptar los términos para continuar';
-
   return errors;
 }

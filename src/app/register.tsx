@@ -1,5 +1,5 @@
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,6 +20,20 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useRegisterForm } from '@/hooks/use-register-form';
+import { registerUser, RegisterError, type RegisterUserData } from '@/services/user-storage';
+import type { RegisterForm } from '@/types/register.types';
+import { validateForm } from '@/utils/register-validation';
+
+const ERROR_FIELD_ORDER: (keyof RegisterForm)[] = [
+  'firstName',
+  'lastName',
+  'documentNumber',
+  'birthDate',
+  'phoneNumber',
+  'email',
+  'password',
+  'confirmPassword',
+];
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -27,20 +42,59 @@ export default function RegisterScreen() {
   const { login } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [validationNotice, setValidationNotice] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionY = useRef<{ personal?: number; account?: number }>({});
+
+  const scrollToFirstError = () => {
+    const fresh = validateForm(form.values);
+    const first = ERROR_FIELD_ORDER.find((k) => fresh[k]);
+    if (!first) return;
+    let y: number | undefined;
+    if (first === 'email' || first === 'password' || first === 'confirmPassword') {
+      y = sectionY.current.account;
+    } else {
+      y = sectionY.current.personal;
+    }
+    if (y !== undefined) {
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - Spacing.two), animated: true });
+    }
+  };
 
   const handleSubmit = async () => {
     setServerError(null);
-    if (!form.validateAll()) return;
-
+    setValidationNotice(false);
+    if (!form.validateAll()) {
+      setValidationNotice(true);
+      scrollToFirstError();
+      return;
+    }
     try {
       setSubmitting(true);
+      const userData: RegisterUserData = {
+        firstName: form.values.firstName,
+        lastName: form.values.lastName,
+        documentType: form.values.documentType,
+        documentNumber: form.values.documentNumber,
+        birthDate: form.values.birthDate,
+        phoneNumber: form.values.phoneNumber,
+        email: form.values.email,
+        password: form.values.password,
+      };
+      await registerUser(userData);
       const fullName = `${form.values.firstName} ${form.values.lastName}`.trim();
+      // TODO(Integrante 1): reemplazar este login automático por el flujo real de sesión (token y redirección por rol).
       await login({
         fullName: fullName || form.values.email.split('@')[0],
         email: form.values.email.trim().toLowerCase(),
       });
       router.replace('/');
     } catch (e) {
+      if (e instanceof RegisterError) {
+        if (e.fields.email) form.setFieldError('email', e.fields.email);
+        if (e.fields.documentNumber) form.setFieldError('documentNumber', e.fields.documentNumber);
+        return;
+      }
       setServerError(e instanceof Error ? e.message : 'No pudimos crear tu cuenta. Intenta de nuevo.');
     } finally {
       setSubmitting(false);
@@ -54,6 +108,7 @@ export default function RegisterScreen() {
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}>
@@ -62,12 +117,30 @@ export default function RegisterScreen() {
               Regístrate para comprar entradas y guardar tus eventos.
             </ThemedText>
 
-            <PersonalDataSection {...form} />
-            <AccountDataSection {...form} />
+            <View
+              collapsable={false}
+              onLayout={(e) => {
+                sectionY.current.personal = e.nativeEvent.layout.y;
+              }}>
+              <PersonalDataSection {...form} />
+            </View>
+            <View
+              collapsable={false}
+              onLayout={(e) => {
+                sectionY.current.account = e.nativeEvent.layout.y;
+              }}>
+              <AccountDataSection {...form} />
+            </View>
 
             {serverError ? (
               <ThemedText type="small" style={{ color: ERROR_COLOR }}>
                 {serverError}
+              </ThemedText>
+            ) : null}
+
+            {validationNotice ? (
+              <ThemedText type="small" style={{ color: ERROR_COLOR }}>
+                Revisa los campos marcados en rojo
               </ThemedText>
             ) : null}
 
