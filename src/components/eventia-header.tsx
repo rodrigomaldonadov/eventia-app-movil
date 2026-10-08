@@ -4,9 +4,10 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Header general de Eventia.
@@ -16,10 +17,12 @@ import { useTheme } from '@/hooks/use-theme';
  */
 export function EventiaHeader() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const eventia = useEventiaTheme();
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, isLoading, logout } = useAuth();
+  const isAuthScreen = pathname === '/login' || pathname === '/register';
   const [open, setOpen] = useState(false);
 
   const go = (href: string) => {
@@ -36,9 +39,8 @@ export function EventiaHeader() {
   const menuItems = [
     { label: 'Explorar', href: '/' },
     { label: 'Mis Tickets', href: '/tickets' },
-    { label: 'Guardados', href: '/saved' },
-    { label: 'Mi perfil', href: '/profile' },
-    { label: 'Configuración', href: '/profile' },
+    { label: 'Mi Perfil', href: '/profile' },
+
   ];
 
   const isCurrentRoute = (href: string) => {
@@ -49,7 +51,7 @@ export function EventiaHeader() {
   };
 
   return (
-    <View style={[styles.outer, { backgroundColor: theme.background }]}>
+    <View style={[styles.outer, { backgroundColor: theme.background, paddingTop: insets.top }]}>
       <View style={styles.inner}>
         <Pressable
           accessibilityRole="button"

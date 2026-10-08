@@ -2,7 +2,7 @@ import '@/global.css';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
-
+import { EventiaHeader } from '@/components/eventia-header';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthProvider } from '@/hooks/use-auth';
 
@@ -21,11 +21,11 @@ export default function RootLayout() {
     <AuthProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AnimatedSplashOverlay />
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="event/[id]" options={{ title: 'Detalle del evento' }} />
-          <Stack.Screen name="login" options={{ title: 'Ingresar', headerShown: false }} />
-          <Stack.Screen name="register" options={{ title: 'Crear cuenta', headerShown: false }} />
+        <Stack screenOptions={{ header: () => <EventiaHeader /> }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="event/[id]" options={{ title: 'Detalle del evento', header: undefined }} />
+          <Stack.Screen name="login" options={{ title: 'Ingresar' }} />
+          <Stack.Screen name="register" options={{ title: 'Crear cuenta' }} />
         </Stack>
       </ThemeProvider>
     </AuthProvider>

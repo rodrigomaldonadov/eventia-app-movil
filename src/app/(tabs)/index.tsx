@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CategoryChips, type CategoryFilter } from '@/components/category-chips';
 import { EventCard } from '@/components/event-card';
-import { EventiaHeader } from '@/components/eventia-header';
 import { HeroCard } from '@/components/hero-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -54,7 +53,6 @@ export default function HomeCatalogScreen() {
   return (
       <ThemedView style={styles.container}>
            <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <EventiaHeader />
 
         <View style={styles.searchRow}>
           <View style={[styles.searchBox, { backgroundColor: theme.backgroundElement }]}>
