@@ -58,6 +58,8 @@ export function CategoryChips({ categories, selected, onSelect }: CategoryChipsP
 const styles = StyleSheet.create({
   // Altura fija: el carrusel no depende del contenido de la lista.
   scroller: {
+    flexGrow: 0,
+    flexShrink: 0,
     height: 60,
     paddingBottom: Spacing.two,
     marginBottom: Spacing.two,
