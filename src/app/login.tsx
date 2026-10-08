@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -146,9 +146,8 @@ export default function LoginScreen() {
           <Pressable
             onPress={handleLogin}
             disabled={loading}
-            className={`w-full bg-indigo-600 py-4 rounded-2xl flex-row items-center justify-center mt-4 shadow-sm ${
-              loading ? 'opacity-70' : 'active:opacity-85'
-            }`}
+            className={`w-full bg-indigo-600 py-4 rounded-2xl flex-row items-center justify-center mt-4 shadow-sm ${loading ? 'opacity-70' : 'active:opacity-85'
+              }`}
           >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />

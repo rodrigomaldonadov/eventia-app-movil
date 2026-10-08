@@ -25,7 +25,7 @@ const storage = {
         return window.localStorage.getItem(key);
       }
     } catch {
-      // ignore storage errors
+      // ignore
     }
     return null;
   },
@@ -35,7 +35,7 @@ const storage = {
         window.localStorage.setItem(key, value);
       }
     } catch {
-      // ignore storage errors
+      // ignore
     }
   },
   removeItem: async (key: string): Promise<void> => {
@@ -44,12 +44,11 @@ const storage = {
         window.localStorage.removeItem(key);
       }
     } catch {
-      // ignore storage errors
+      // ignore
     }
   },
 };
 
-// In-memory fallback for mobile runtime
 let memorySession: { user: User; token?: string } | null = null;
 
 const AuthContext = createContext<AuthContextType>({
@@ -81,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(memorySession.token || null);
         }
       } catch {
-        // failed to restore session
+        // ignore
       } finally {
         setIsLoading(false);
       }

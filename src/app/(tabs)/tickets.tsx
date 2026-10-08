@@ -7,8 +7,8 @@ import { EventiaHeader } from '@/components/eventia-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useAuth } from '@/hooks/use-auth';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
+import { useAuth } from '@/hooks/use-auth';
 
 /**
  * Placeholder de "Mis entradas / Historial".
