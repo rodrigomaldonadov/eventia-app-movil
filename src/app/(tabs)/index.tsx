@@ -52,8 +52,8 @@ export default function HomeCatalogScreen() {
     : filtered;
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ThemedView style={styles.container}>
+           <SafeAreaView style={styles.safeArea} edges={['top']}>
         <EventiaHeader />
 
         <View style={styles.searchRow}>

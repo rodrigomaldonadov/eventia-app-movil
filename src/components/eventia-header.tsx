@@ -1,10 +1,13 @@
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 /**
  * Header general de Eventia (Integrante 4), según la guía del catálogo.
@@ -18,6 +21,13 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 export function EventiaHeader() {
   const theme = useTheme();
   const eventia = useEventiaTheme();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+
+  const go = (href: string) => {
+    setOpen(false);
+    router.push(href as never);
+  };
 
   return (
     <View style={[styles.outer, { backgroundColor: theme.background }]}>
@@ -33,20 +43,31 @@ export function EventiaHeader() {
           </ThemedText>
         </View>
 
-        <Link href="/profile" asChild>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Ir a mi perfil"
-            style={({ pressed }) => [
-              styles.avatar,
-              { backgroundColor: eventia.primary },
-              pressed && styles.pressed,
-            ]}>
-            <ThemedText type="smallBold" style={styles.avatarLetter}>
-              S
-            </ThemedText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Abrir menú de cuenta"
+          onPress={() => setOpen(true)}
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.menuButton,
+            { backgroundColor: theme.backgroundElement },
+            pressed && styles.pressed,
+          ]}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={[styles.bar, { backgroundColor: theme.text }]} />
+          ))}
+        </Pressable>
+
+        <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+          <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
+            <View style={[styles.menu, { backgroundColor: theme.backgroundElement }]}>
+              <Pressable style={styles.menuItem} onPress={() => go('/profile')}>
+                <ThemedText type="smallBold">Mi perfil</ThemedText>
+              </Pressable>
+              {/* agrega aquí Configuración, Cerrar sesión, etc. */}
+            </View>
           </Pressable>
-        </Link>
+        </Modal>
       </View>
     </View>
   );
@@ -94,16 +115,21 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 26,
   },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+
+  menuButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
   },
-  avatarLetter: {
-    color: '#FFFFFF',
-  },
+  bar: { width: 18, height: 2, borderRadius: 1 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'flex-end' },
+  menu: { marginTop: 64, marginRight: Spacing.three, minWidth: 200, borderRadius: 16, padding: Spacing.two },
+  menuItem: { padding: Spacing.three },
+
+
   pressed: {
     opacity: 0.8,
   },

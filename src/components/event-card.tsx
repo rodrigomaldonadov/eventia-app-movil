@@ -20,90 +20,164 @@ interface EventCardProps {
 }
 
 const AVAILABILITY_STYLE = {
-  ok: { bg: Eventia.successBg, text: Eventia.successText, dot: Eventia.successDot },
-  low: { bg: Eventia.warningBg, text: Eventia.warningText, dot: Eventia.warningDot },
-  out: { bg: Eventia.dangerBg, text: Eventia.dangerText, dot: Eventia.dangerDot },
+  ok: {
+    bg: Eventia.successBg,
+    text: Eventia.successText,
+    dot: Eventia.successDot,
+  },
+  low: {
+    bg: Eventia.warningBg,
+    text: Eventia.warningText,
+    dot: Eventia.warningDot,
+  },
+  out: {
+    bg: Eventia.dangerBg,
+    text: Eventia.dangerText,
+    dot: Eventia.dangerDot,
+  },
 } as const;
 
-/**
- * Tarjeta vertical del catálogo, según la guía: portada con badge de fecha
- * y chip de disponibilidad, organizador, título, lugar y franja de precio
- * con acción. Toda la tarjeta y el botón navegan al detalle `/event/[id]`,
- * punto de entrada del flujo de compra (Integrante 5).
- */
 export function EventCard({ event }: EventCardProps) {
   const theme = useTheme();
   const eventia = useEventiaTheme();
   const router = useRouter();
+
   const badge = getDateBadge(event.date);
   const availability = getAvailability(event);
   const availabilityStyle = AVAILABILITY_STYLE[availability.tone];
   const soldOut = availability.tone === 'out';
 
-  const goToDetail = () => router.push({ pathname: '/event/[id]', params: { id: event.id } });
+  const goToDetail = () =>
+    router.push({
+      pathname: '/event/[id]',
+      params: { id: event.id },
+    });
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Ver detalle de ${event.title}`}
-      onPress={goToDetail}
-      style={({ pressed }) => [
+    <View
+      style={[
         styles.card,
         { backgroundColor: theme.backgroundElement },
-        pressed && styles.pressed,
-      ]}>
-      <Pressable onPress={goToDetail}>
-        <View style={[styles.cover, { backgroundColor: CATEGORY_COVER[event.category] }]}>
+      ]}
+    >
+      {/* Parte clickeable de la tarjeta */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Ver detalle de ${event.title}`}
+        onPress={goToDetail}
+        style={({ pressed }) => [
+          pressed && styles.pressed,
+        ]}
+      >
+        <View
+          style={[
+            styles.cover,
+            { backgroundColor: CATEGORY_COVER[event.category] },
+          ]}
+        >
           <ThemedText type="title" style={styles.coverInitial}>
             {event.title.charAt(0)}
           </ThemedText>
 
           <View style={styles.dateBadge}>
-            <ThemedText type="smallBold" style={styles.dateMonth} numberOfLines={1}>
+            <ThemedText
+              type="smallBold"
+              style={styles.dateMonth}
+              numberOfLines={1}
+            >
               {badge.month}
             </ThemedText>
-            <ThemedText type="smallBold" style={styles.dateDay} numberOfLines={1}>
+
+            <ThemedText
+              type="smallBold"
+              style={styles.dateDay}
+              numberOfLines={1}
+            >
               {badge.day}
             </ThemedText>
           </View>
 
-          <View style={[styles.availability, { backgroundColor: availabilityStyle.bg }]}>
-            <View style={[styles.dot, { backgroundColor: availabilityStyle.dot }]} />
+          <View
+            style={[
+              styles.availability,
+              { backgroundColor: availabilityStyle.bg },
+            ]}
+          >
+            <View
+              style={[
+                styles.dot,
+                { backgroundColor: availabilityStyle.dot },
+              ]}
+            />
+
             <ThemedText
               type="smallBold"
               numberOfLines={1}
-              style={{ color: availabilityStyle.text }}>
+              style={{ color: availabilityStyle.text }}
+            >
               {availability.label}
             </ThemedText>
           </View>
         </View>
 
         <View style={styles.body}>
-          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            {`${event.organizer}  ✓`}
+          <ThemedText
+            type="small"
+            themeColor="textSecondary"
+            numberOfLines={1}
+          >
+            {`${event.organizer} ✓`}
           </ThemedText>
-          <ThemedText type="smallBold" style={styles.title} numberOfLines={2}>
+
+          <ThemedText
+            type="smallBold"
+            style={styles.title}
+            numberOfLines={2}
+          >
             {event.title}
           </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+
+          <ThemedText
+            type="small"
+            themeColor="textSecondary"
+            numberOfLines={1}
+          >
             {`${event.venue} · ${formatShortDate(event.date)}`}
           </ThemedText>
         </View>
       </Pressable>
 
-      <View style={[styles.footer, { backgroundColor: eventia.surfaceLow }]}>
+      {/* Footer */}
+      <View
+        style={[
+          styles.footer,
+          { backgroundColor: eventia.surfaceLow },
+        ]}
+      >
         <View>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText
+            type="small"
+            themeColor="textSecondary"
+          >
             {soldOut ? 'Lista de espera' : 'Precio por entrada'}
           </ThemedText>
-          <ThemedText type="smallBold" style={[styles.price, { color: eventia.price }]}>
+
+          <ThemedText
+            type="smallBold"
+            style={[
+              styles.price,
+              { color: eventia.price },
+            ]}
+          >
             {`Desde ${formatPricePEN(getPriceFrom(event))}`}
           </ThemedText>
         </View>
 
         {soldOut ? (
           <View style={styles.notifyButton}>
-            <ThemedText type="smallBold">Avisarme</ThemedText>
+            <ThemedText type="smallBold">
+              Avisarme
+            </ThemedText>
           </View>
         ) : (
           <Pressable
@@ -114,14 +188,18 @@ export function EventCard({ event }: EventCardProps) {
               styles.buyButton,
               { backgroundColor: eventia.primaryContainer },
               pressed && styles.pressed,
-            ]}>
-            <ThemedText type="smallBold" style={styles.buyLabel}>
+            ]}
+          >
+            <ThemedText
+              type="smallBold"
+              style={styles.buyLabel}
+            >
               Comprar
             </ThemedText>
           </Pressable>
         )}
       </View>
-    </Pressable>
+    </View>
   );
 }
 
