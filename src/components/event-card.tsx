@@ -292,6 +292,7 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   buyButton: {
+    backgroundColor: '#4F46E5',
     paddingHorizontal: 20,
     paddingVertical: 11,
     borderRadius: 12,

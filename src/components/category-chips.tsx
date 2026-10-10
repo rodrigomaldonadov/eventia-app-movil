@@ -36,8 +36,8 @@ export function CategoryChips({ categories, selected, onSelect }: CategoryChipsP
             style={({ pressed }) => [
               styles.chip,
               {
-                backgroundColor: isActive ? eventia.primaryContainer : theme.backgroundElement,
-                borderColor: isActive ? eventia.primaryContainer : theme.backgroundSelected,
+                backgroundColor: isActive ? '#EEF2FF' : theme.backgroundElement,
+                borderColor: isActive ? '#4F46E5' : theme.backgroundSelected,
               },
               pressed && styles.pressed,
             ]}>
@@ -45,7 +45,7 @@ export function CategoryChips({ categories, selected, onSelect }: CategoryChipsP
               type="smallBold"
               numberOfLines={1}
               style={isActive ? styles.activeLabel : undefined}
-              themeColor={isActive ? undefined : 'textSecondary'}>
+              themeColor={isActive ? 'text' : 'textSecondary'}>
               {category}
             </ThemedText>
           </Pressable>
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   activeLabel: {
-    color: '#FFFFFF',
+    color: '#0B1C30',
   },
   pressed: {
     opacity: 0.85,

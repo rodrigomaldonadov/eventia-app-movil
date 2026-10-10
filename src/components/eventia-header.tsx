@@ -1,10 +1,12 @@
 import { usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useCart } from '@/hooks/use-cart';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,8 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 /**
  * Header general de Eventia.
  * Muestra logo a la izquierda (lleva al catálogo /) y estado dinámico a la derecha:
- * - Sin sesión: botones "Iniciar sesión" y "Registrarse".
- * - Con sesión: hamburguesa con menú modal (Explorar, Mis Tickets, Guardados, Mi perfil, Configuración, Cerrar sesión).
+ * - Sin sesión: carrito, botones "Iniciar" y "Registrarse".
+ * - Con sesión: carrito y hamburguesa con menú modal.
  */
 export function EventiaHeader() {
   const theme = useTheme();
@@ -22,6 +24,7 @@ export function EventiaHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, isLoading, logout } = useAuth();
+  const { totalTickets } = useCart();
   const isAuthScreen = pathname === '/login' || pathname === '/register';
   const [open, setOpen] = useState(false);
 
@@ -39,8 +42,8 @@ export function EventiaHeader() {
   const menuItems = [
     { label: 'Explorar', href: '/' },
     { label: 'Mis Tickets', href: '/tickets' },
+    { label: 'Mi Carrito', href: '/cart' },
     { label: 'Mi Perfil', href: '/profile' },
-
   ];
 
   const isCurrentRoute = (href: string) => {
@@ -53,104 +56,120 @@ export function EventiaHeader() {
   return (
     <View style={[styles.outer, { backgroundColor: theme.background, paddingTop: insets.top }]}>
       <View style={styles.inner}>
+        {/* Logo a la izquierda siempre intacto */}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Ir al catálogo principal"
           onPress={() => router.push('/')}
           style={({ pressed }) => [styles.brandRow, pressed && styles.pressed]}>
           <View style={[styles.logoMark, { backgroundColor: eventia.primaryContainer }]}>
-            <ThemedText type="smallBold" style={styles.logoLetter}>
+            <Text style={styles.logoLetter}>
               E
-            </ThemedText>
+            </Text>
           </View>
           <ThemedText type="smallBold" style={styles.brand}>
             Eventia
           </ThemedText>
         </Pressable>
 
-        {isLoading ? (
-          <View style={styles.rightPlaceholder} />
-        ) : isAuthenticated ? (
-          <>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Abrir menú de cuenta"
-              onPress={() => setOpen(true)}
-              hitSlop={8}
-              style={({ pressed }) => [
-                styles.menuButton,
-                { backgroundColor: theme.backgroundElement },
-                pressed && styles.pressed,
-              ]}>
-              {[0, 1, 2].map((i) => (
-                <View key={i} style={[styles.bar, { backgroundColor: theme.text }]} />
-              ))}
-            </Pressable>
+        {/* Bloque derecho ordenado: Carrito, Iniciar y Registrarse */}
+        <View style={styles.rightCluster}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ir al carrito de compras"
+            onPress={() => router.push('/cart' as never)}
+            hitSlop={8}
+            style={({ pressed }) => [
+              styles.cartButton,
+              { backgroundColor: theme.backgroundElement },
+              pressed && styles.pressed,
+            ]}>
+            <Ionicons name="cart-outline" size={19} color={theme.text} />
+            {totalTickets > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>
+                  {totalTickets > 99 ? '99+' : totalTickets}
+                </Text>
+              </View>
+            )}
+          </Pressable>
 
-            <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-              <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-                <View style={[styles.menu, { backgroundColor: theme.backgroundElement }]}>
-                  {menuItems.map((item) => {
-                    const active = isCurrentRoute(item.href);
-                    return (
-                      <Pressable
-                        key={item.label}
-                        style={({ pressed }) => [
-                          styles.menuItem,
-                          active && { backgroundColor: theme.backgroundSelected },
-                          pressed && styles.pressed,
-                        ]}
-                        onPress={() => go(item.href)}>
-                        <ThemedText
-                          type="smallBold"
-                          style={active ? { color: eventia.primary } : undefined}>
-                          {item.label}
-                        </ThemedText>
-                      </Pressable>
-                    );
-                  })}
-                  <Pressable
-                    style={({ pressed }) => [styles.menuItem, styles.logoutItem, pressed && styles.pressed]}
-                    onPress={handleLogout}>
-                    <ThemedText type="smallBold" style={styles.logoutText}>
-                      Cerrar sesión
-                    </ThemedText>
-                  </Pressable>
-                </View>
+          {isLoading ? (
+            <View style={styles.rightPlaceholder} />
+          ) : isAuthenticated ? (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Abrir menú de cuenta"
+                onPress={() => setOpen(true)}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.menuButton,
+                  { backgroundColor: theme.backgroundElement },
+                  pressed && styles.pressed,
+                ]}>
+                {[0, 1, 2].map((i) => (
+                  <View key={i} style={[styles.bar, { backgroundColor: theme.text }]} />
+                ))}
               </Pressable>
-            </Modal>
-          </>
-        ) : (
-          <View style={styles.authButtonsRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Iniciar sesión"
-              onPress={() => router.push('/login')}
-              style={({ pressed }) => [
-                styles.loginButton,
-                { borderColor: theme.backgroundSelected },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold" style={styles.loginText}>
-                Iniciar sesión
-              </ThemedText>
-            </Pressable>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Registrarse"
-              onPress={() => router.push('/register')}
-              style={({ pressed }) => [
-                styles.registerButton,
-                { backgroundColor: eventia.primaryContainer },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold" style={styles.registerText}>
-                Registrarse
-              </ThemedText>
-            </Pressable>
-          </View>
-        )}
+              <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+                <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
+                  <View style={[styles.menu, { backgroundColor: theme.backgroundElement }]}>
+                    {menuItems.map((item) => {
+                      const active = isCurrentRoute(item.href);
+                      return (
+                        <Pressable
+                          key={item.label}
+                          style={({ pressed }) => [
+                            styles.menuItem,
+                            active && { backgroundColor: theme.backgroundSelected },
+                            pressed && styles.pressed,
+                          ]}
+                          onPress={() => go(item.href)}>
+                          <ThemedText
+                            type="smallBold"
+                            style={active ? { color: eventia.primary } : undefined}>
+                            {item.label}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                    <Pressable
+                      style={({ pressed }) => [styles.menuItem, styles.logoutItem, pressed && styles.pressed]}
+                      onPress={handleLogout}>
+                      <ThemedText type="smallBold" style={styles.logoutText}>
+                        Cerrar sesión
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+                </Pressable>
+              </Modal>
+            </>
+          ) : (
+            <View style={styles.authButtonsRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Iniciar sesión"
+                onPress={() => router.push('/login')}
+                style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
+                <Text style={styles.authText}>
+                  Iniciar
+                </Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Registrarse"
+                onPress={() => router.push('/register')}
+                style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
+                <Text style={styles.authText}>
+                  Registrarse
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -179,12 +198,14 @@ const styles = StyleSheet.create({
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: 8,
+    flexShrink: 0,
   },
   logoMark: {
     width: 32,
     height: 32,
     borderRadius: 8,
+    backgroundColor: '#4F46E5',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -192,19 +213,52 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     lineHeight: 22,
+    fontWeight: '700',
   },
   brand: {
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  rightCluster: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  cartButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#4F46E5',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  cartBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
   rightPlaceholder: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
   },
   menuButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
@@ -233,25 +287,20 @@ const styles = StyleSheet.create({
   authButtonsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: 8,
   },
   loginButton: {
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderColor: '#CBD5E1',
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    backgroundColor: '#FFFFFF',
   },
-  loginText: {
-    fontSize: 13,
-  },
-  registerButton: {
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  registerText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+  authText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0F172A',
   },
   pressed: {
     opacity: 0.8,
