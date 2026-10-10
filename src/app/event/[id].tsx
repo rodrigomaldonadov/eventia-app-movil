@@ -19,6 +19,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { CATEGORY_COVER, formatPricePEN, getEventById as getMockEventById } from '@/data/events';
 import { eventService } from '@/services/eventService';
 import type { EventItem, TicketType, ValidateTicketsPayload } from '@/types/event.types';
+import { useCart } from '@/hooks/use-cart';
 import { EventInfoSection } from '@/components/event/EventInfoSection';
 import { TicketCard } from '@/components/event/TicketCard';
 import { EventCheckoutBar } from '@/components/event/EventCheckoutBar';
@@ -29,6 +30,7 @@ export default function EventDetailScreen() {
   const eventia = useEventiaTheme();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { addEventSelection, totalTickets: cartTotalTickets } = useCart();
 
   // Obtiene el evento inmediatamente de los datos locales
   const [event, setEvent] = useState<EventItem | null>(() => (id ? getMockEventById(id) ?? null : null));
@@ -118,17 +120,16 @@ export default function EventDetailScreen() {
       return;
     }
 
-    Alert.alert(
-      'Agregado al Carrito',
-      `Se agregaron ${totalTickets} entrada(s) de "${event.title}" por ${formatPricePEN(subtotal)}. Listo para gestionar en el carrito.`,
-    );
+    // Agrega las entradas al carrito compartido directamente
+    addEventSelection(event, quantities);
+    setQuantities({});
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Barra superior con botón de regreso */}
+      {/* Barra superior con botón de regreso y acceso al carrito */}
       <View style={[styles.topBar, { backgroundColor: theme.background }]}>
         <View style={styles.topBarInner}>
           <Pressable
@@ -144,7 +145,21 @@ export default function EventDetailScreen() {
             Detalle del Evento
           </ThemedText>
 
-          <View style={styles.topBarSpacer} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ir al carrito de compras"
+            onPress={() => router.push('/cart' as never)}
+            hitSlop={10}
+            style={({ pressed }) => [styles.cartIconCircle, pressed && styles.pressed]}>
+            <Ionicons name="cart-outline" size={20} color={theme.text} />
+            {cartTotalTickets > 0 && (
+              <View style={styles.cartBadge}>
+                <ThemedText style={styles.cartBadgeText}>
+                  {cartTotalTickets > 99 ? '99+' : cartTotalTickets}
+                </ThemedText>
+              </View>
+            )}
+          </Pressable>
         </View>
       </View>
 
@@ -267,8 +282,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.04)',
   },
-  topBarSpacer: {
+  cartIconCircle: {
     width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#4F46E5',
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
   scroll: {
     flex: 1,
