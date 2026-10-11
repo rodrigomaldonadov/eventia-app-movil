@@ -9,13 +9,13 @@
  * backend exponga el endpoint de eventos (RF-04).
  */
 
-export type EventCategory =
-  | 'Música'
-  | 'Tech & Startups'
-  | 'Festivales'
-  | 'Gastronomía'
-  | 'Teatro'
-  | 'Networking';
+import {
+  type EventCategory,
+  type TicketType,
+  type EventItem,
+} from '@/types/event.types';
+
+export type { EventCategory, TicketType, EventItem };
 
 export const EVENT_CATEGORIES: EventCategory[] = [
   'Música',
@@ -36,33 +36,13 @@ export const CATEGORY_COVER: Record<EventCategory, string> = {
   Networking: '#0369A1',
 };
 
-export interface TicketType {
-  id: string;
-  name: string;
-  price: number;
-  available: number;
-}
-
-export interface EventItem {
-  id: string;
-  title: string;
-  category: EventCategory;
-  /** Fecha en formato ISO (YYYY-MM-DD). */
-  date: string;
-  time: string;
-  venue: string;
-  city: string;
-  description: string;
-  organizer: string;
-  featured: boolean;
-  tickets: TicketType[];
-}
-
 export const EVENTS: EventItem[] = [
   {
     id: 'neon-wave-2025',
     title: 'Festival Neon Wave 2025',
     category: 'Música',
+    edition: 'EDICIÓN 10° ANIVERSARIO',
+    imageUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1200&auto=format&fit=crop',
     date: '2025-10-24',
     time: '19:00',
     venue: 'Arena 1, San Miguel',
@@ -72,14 +52,35 @@ export const EVENTS: EventItem[] = [
     organizer: 'Vibe Productions',
     featured: true,
     tickets: [
-      { id: 'general', name: 'General - Fase 2', price: 120, available: 110 },
-      { id: 'vip', name: 'VIP Lounge Experience', price: 250, available: 35 },
+      {
+        id: 'general',
+        name: 'General Pass - Fase 2',
+        price: 120,
+        available: 110,
+        description: 'Acceso a los 3 escenarios simultáneos, zona de food trucks y lockers generales.',
+      },
+      {
+        id: 'vip',
+        name: 'VIP Lounge Experience',
+        price: 250,
+        available: 35,
+        description: 'Plataforma elevada premium, barra libre de cortesía y sanitarios climatizados.',
+      },
+      {
+        id: 'early',
+        name: 'Early Bird Pass',
+        price: 80,
+        available: 0,
+        description: 'Fase inicial con precio especial promocional. Cupos de preventa agotados.',
+      },
     ],
   },
   {
     id: 'sonica-open-air',
     title: 'Sónica Open Air Showcase',
     category: 'Festivales',
+    edition: 'EDICIÓN OPEN AIR 2025',
+    imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=1200&auto=format&fit=crop',
     date: '2025-12-04',
     time: '18:00',
     venue: 'Parque Bicentenario · Escenario Lago',
@@ -89,14 +90,27 @@ export const EVENTS: EventItem[] = [
     organizer: 'Wavefront Live',
     featured: true,
     tickets: [
-      { id: 'general', name: 'General', price: 95, available: 240 },
-      { id: 'vip', name: 'Pase VIP', price: 180, available: 4 },
+      {
+        id: 'general',
+        name: 'General Access',
+        price: 95,
+        available: 240,
+        description: 'Acceso general al predio, zona de barras y escenario principal al aire libre.',
+      },
+      {
+        id: 'vip',
+        name: 'Pase VIP Escenario',
+        price: 180,
+        available: 4,
+        description: 'Ubicación preferencial frente al lago, fast-pass en ingreso y merchandising conmemorativo.',
+      },
     ],
   },
   {
     id: 'indie-rock-sessions',
     title: 'Indie Rock Sessions',
     category: 'Música',
+    imageUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=1200&auto=format&fit=crop',
     date: '2025-11-02',
     time: '20:00',
     venue: 'Teatro Leguía',
@@ -105,12 +119,21 @@ export const EVENTS: EventItem[] = [
       'Una noche con las mejores bandas indie nacionales en un formato íntimo. Apertura de puertas 18:30 hrs.',
     organizer: 'Costa Verde Producciones',
     featured: false,
-    tickets: [{ id: 'general', name: 'General', price: 89, available: 920 }],
+    tickets: [
+      {
+        id: 'general',
+        name: 'Platea General',
+        price: 89,
+        available: 920,
+        description: 'Ingreso al patio de butacas en orden de llegada y acceso a la feria de vinilos.',
+      },
+    ],
   },
   {
     id: 'tech-founders-summit',
     title: 'Ibero Digital Innovation Day 2026',
     category: 'Tech & Startups',
+    imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop',
     date: '2025-11-18',
     time: '09:00',
     venue: 'Centro de Convenciones · Auditorio Principal',
@@ -119,12 +142,21 @@ export const EVENTS: EventItem[] = [
       'Cumbre de tecnología e innovación con charlas, networking y feria de emprendimientos. Incluye acceso a todas las conferencias.',
     organizer: 'Fintech Leaders Global',
     featured: false,
-    tickets: [{ id: 'regular', name: 'Pase Regular', price: 65, available: 18 }],
+    tickets: [
+      {
+        id: 'regular',
+        name: 'Pase Regular Tech',
+        price: 65,
+        available: 18,
+        description: 'Acceso a conferencias magistrales, workshops matutinos y kit de bienvenida del asistente.',
+      },
+    ],
   },
   {
     id: 'maridaje-craft-spirits',
     title: 'Festival de Maridaje & Craft Spirits',
     category: 'Gastronomía',
+    imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1200&auto=format&fit=crop',
     date: '2025-12-12',
     time: '12:00',
     venue: 'Terraza Condesa · Piso 6',
@@ -133,12 +165,21 @@ export const EVENTS: EventItem[] = [
       'Festival gastronómico con maridajes, destilados artesanales y catas guiadas por sommeliers invitados.',
     organizer: 'Sabores del Valle Co.',
     featured: false,
-    tickets: [{ id: 'general', name: 'General', price: 75, available: 0 }],
+    tickets: [
+      {
+        id: 'general',
+        name: 'Ticket Degustación',
+        price: 75,
+        available: 0,
+        description: 'Cata de 5 destilados artesanales y tabla de maridaje gourmet individual.',
+      },
+    ],
   },
   {
     id: 'hamlet-contemporaneo',
     title: 'Hamlet: Clásico Contemporáneo',
     category: 'Teatro',
+    imageUrl: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?q=80&w=1200&auto=format&fit=crop',
     date: '2025-10-22',
     time: '20:00',
     venue: 'Teatro Municipal de Lima',
@@ -147,12 +188,21 @@ export const EVENTS: EventItem[] = [
       'Reinterpretación contemporánea del clásico de Shakespeare a cargo de la compañía Teatro del Centro Histórico.',
     organizer: 'Teatro Municipal',
     featured: false,
-    tickets: [{ id: 'general', name: 'General', price: 45, available: 130 }],
+    tickets: [
+      {
+        id: 'general',
+        name: 'Platea y Palco',
+        price: 45,
+        available: 130,
+        description: 'Entrada numerada con vista directa al escenario principal.',
+      },
+    ],
   },
   {
     id: 'founders-night',
     title: 'Founders Night: Networking',
     category: 'Networking',
+    imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop',
     date: '2025-11-06',
     time: '19:30',
     venue: 'WeWork Larco, Miraflores',
@@ -161,7 +211,15 @@ export const EVENTS: EventItem[] = [
       'Noche de networking para fundadores, inversionistas y operadores. Pitch abierto y ronda de contactos guiada.',
     organizer: 'Eventia S.A.C.',
     featured: false,
-    tickets: [{ id: 'general', name: 'Acceso', price: 30, available: 8 }],
+    tickets: [
+      {
+        id: 'general',
+        name: 'Pase Acceso Networking',
+        price: 30,
+        available: 8,
+        description: 'Acceso a la sesión de pitch, coctel de bienvenida y directorio de contactos.',
+      },
+    ],
   },
 ];
 
@@ -235,4 +293,29 @@ export function getDateBadge(isoDate: string): { month: string; day: string } {
     'DIC',
   ];
   return { month: months[(month ?? 1) - 1], day: String(day) };
+}
+
+/** Fecha ISO (YYYY-MM-DD) -> "Sábado, 24 de Octubre de 2025". */
+export function formatFullDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  if (!year || !month || !day) return isoDate;
+  const d = new Date(year, month - 1, day);
+  const weekdays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const months = [
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
+  ];
+  const weekday = weekdays[d.getDay()] ?? '';
+  const monthName = months[month - 1] ?? '';
+  return `${weekday}, ${day} de ${monthName} de ${year}`;
 }
