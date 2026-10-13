@@ -210,6 +210,54 @@ export async function verifyCredentials(
   return null;
 }
 
+interface ResetRequest {
+  code: string;
+  expiresAt: number;
+  attempts: number;
+}
+
+// Simulación local: el código se muestra en pantalla porque no hay servicio de correo.
+const resetRequests = new Map<string, ResetRequest>();
+
+export async function requestPasswordReset(email: string): Promise<string | null> {
+  const normEmail = email.trim().toLowerCase();
+  const users = await readUsersInternal();
+  if (!users.some((user) => user.email === normEmail)) return null;
+
+  const bytes = Crypto.getRandomBytes(4);
+  const value = ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0;
+  const code = String(value % 1_000_000).padStart(6, '0');
+  resetRequests.set(normEmail, { code, expiresAt: Date.now() + 10 * 60_000, attempts: 0 });
+  return code;
+}
+
+export async function resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+  const normEmail = email.trim().toLowerCase();
+  const request = resetRequests.get(normEmail);
+  if (!request || request.expiresAt < Date.now()) {
+    resetRequests.delete(normEmail);
+    throw new Error('El código venció. Solicita uno nuevo.');
+  }
+  if (request.attempts >= 5) {
+    resetRequests.delete(normEmail);
+    throw new Error('Agotaste los intentos. Solicita un código nuevo.');
+  }
+  if (request.code !== code.trim()) {
+    request.attempts += 1;
+    throw new Error('El código no es correcto.');
+  }
+
+  await withWriteLock(async () => {
+    const users = await readUsersInternal();
+    const user = users.find((item) => item.email === normEmail);
+    if (!user) throw new Error('No se encontró la cuenta.');
+    user.salt = Crypto.randomUUID();
+    user.passwordHash = await hashPassword(newPassword, user.salt);
+    await saveUsersInternal(users);
+  });
+  resetRequests.delete(normEmail);
+}
+
 /**
  * Devuelve la lista completa de usuarios públicos (solo para pruebas/verificación).
  * NUNCA incluye passwordHash ni salt.
