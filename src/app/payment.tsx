@@ -22,6 +22,7 @@ import { CreditCardVisual } from '@/features/payments/components/CreditCardVisua
 import { InstallmentsSelector } from '@/features/payments/components/InstallmentsSelector';
 import { PaymentProcessingModal } from '@/features/payments/components/PaymentProcessingModal';
 import { paymentService } from '@/features/payments/services/paymentService';
+import { orderService } from '@/features/orders/services/orderService';
 import type {
   PaymentGatewayType,
   PaymentTransactionRequest,
@@ -32,7 +33,7 @@ export default function PaymentScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { user } = useAuth();
-  const { items, total, totalTickets, clearCart } = useCart();
+  const { items, subtotal, igv, total, totalTickets, clearCart } = useCart();
 
   const [selectedGateway, setSelectedGateway] = useState<PaymentGatewayType>('card');
   const [cardNumber, setCardNumber] = useState('4532 8821 9910 8910');
@@ -123,6 +124,21 @@ export default function PaymentScreen() {
     };
 
     const res = await paymentService.processPayment(request);
+
+    if (res.status === 'approved') {
+      await orderService.createOrder({
+        items,
+        subtotal: subtotal || (total ? Math.round((total / 1.18) * 100) / 100 : 244),
+        igv: igv || (total ? Math.round((total - total / 1.18) * 100) / 100 : 44),
+        total: total || 288,
+        buyerName: cardHolder,
+        buyerEmail: user?.email || 'comprador@eventia.io',
+        buyerDocument: '41.890.321-K',
+        paymentMethod: `Mercado Pago (${request.card?.brand?.toUpperCase() || 'Tarjeta'})`,
+        authorizationCode: res.authorizationCode,
+      });
+    }
+
     setIsProcessing(false);
     setTransactionResult(res);
   };
