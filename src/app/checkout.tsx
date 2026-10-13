@@ -111,24 +111,8 @@ export default function CheckoutScreen() {
       return;
     }
 
-    setIsProcessing(true);
-
-    setTimeout(() => {
-      setIsProcessing(false);
-      Alert.alert(
-        '¡Compra Exitosa!',
-        `Se han emitido tus ${totalTickets} entradas para "${eventTitle}". Tus pases digitales ya están listos.`,
-        [
-          {
-            text: 'Ver Mis Entradas',
-            onPress: () => {
-              clearCart();
-              router.replace('/(tabs)/tickets');
-            },
-          },
-        ],
-      );
-    }, 1500);
+    // Redirige a la Pasarela de Pago Segura (Mercado Pago / Sandbox)
+    router.push('/payment');
   };
 
   if (items.length === 0) {
@@ -263,7 +247,7 @@ export default function CheckoutScreen() {
         onPressPay={handleExecutePayment}
         isLoading={isProcessing}
         disabled={!termsAccepted}
-        buttonText={isProcessing ? 'Procesando...' : 'Pagar y Generar Entradas'}
+        buttonText={isProcessing ? 'Procesando...' : 'Continuar al Pago Seguro'}
       />
     </SafeAreaView>
   );
