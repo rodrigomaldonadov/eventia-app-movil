@@ -28,6 +28,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="event/[id]" options={{ title: 'Detalle del evento', header: undefined }} />
             <Stack.Screen name="cart" options={{ title: 'Carrito de compras', header: undefined }} />
+            <Stack.Screen name="checkout" options={{ title: 'Checkout seguro', header: undefined }} />
             <Stack.Screen name="login" options={{ title: 'Ingresar' }} />
             <Stack.Screen name="register" options={{ title: 'Crear cuenta' }} />
           </Stack>
