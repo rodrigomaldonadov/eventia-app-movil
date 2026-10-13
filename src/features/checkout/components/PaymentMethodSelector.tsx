@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Eventia } from '@/constants/theme';
 import type { CardDetails, PaymentMethodId } from '../types/checkout.types';
@@ -7,16 +7,21 @@ import type { CardDetails, PaymentMethodId } from '../types/checkout.types';
 interface PaymentMethodSelectorProps {
   selectedMethod: PaymentMethodId;
   onSelectMethod: (method: PaymentMethodId) => void;
-  cardDetails: CardDetails;
-  onChangeCardDetails: (details: CardDetails) => void;
+  cardDetails?: CardDetails;
+  onChangeCardDetails?: (details: CardDetails) => void;
 }
 
 export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   selectedMethod,
   onSelectMethod,
-  cardDetails,
-  onChangeCardDetails,
 }) => {
+  const handleDisabledMethodPress = (methodName: string) => {
+    Alert.alert(
+      'Próximamente disponible',
+      `El método de pago con ${methodName} se habilitará en la siguiente actualización. Por favor selecciona Mercado Pago / Tarjetas para continuar tu compra.`,
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.titleRow}>
@@ -24,173 +29,90 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         <Text style={styles.sectionTitle}>Selecciona Método de Pago</Text>
       </View>
 
-      {/* 1. Apple Pay / Google Pay (1-TAP) */}
+      {/* 1. Apple Pay / Google Pay (Deshabilitado / Próximamente) */}
       <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => onSelectMethod('wallet')}
-        style={[
-          styles.methodCard,
-          selectedMethod === 'wallet' && styles.methodCardSelected,
-        ]}>
+        activeOpacity={0.7}
+        onPress={() => handleDisabledMethodPress('Apple Pay / Google Pay')}
+        style={[styles.methodCard, styles.methodCardDisabled]}>
         <View style={styles.radioRow}>
-          <View
-            style={[
-              styles.radioOuter,
-              selectedMethod === 'wallet' && styles.radioOuterSelected,
-            ]}>
-            {selectedMethod === 'wallet' && <View style={styles.radioInner} />}
-          </View>
+          <View style={styles.radioOuterDisabled} />
           <View style={styles.methodInfo}>
             <View style={styles.badgeLine}>
-              <Text style={styles.methodName}>Apple Pay / Google Pay</Text>
-              <View style={styles.tapBadge}>
-                <Text style={styles.tapBadgeText}>1-TAP</Text>
+              <Text style={styles.methodNameDisabled}>Apple Pay / Google Pay</Text>
+              <View style={styles.comingSoonBadge}>
+                <Text style={styles.comingSoonText}>PRÓXIMAMENTE</Text>
               </View>
             </View>
-            <Text style={styles.methodDesc}>
-              Autenticación biométrica instantánea
+            <Text style={styles.methodDescDisabled}>
+              Autenticación biométrica de un solo toque
             </Text>
           </View>
         </View>
-        <Ionicons name="phone-portrait-outline" size={20} color="#0B1C30" />
+        <Ionicons name="phone-portrait-outline" size={20} color="#94A3B8" />
       </TouchableOpacity>
 
-      {/* 2. Mercado Pago / Tarjetas de Crédito y Débito */}
-      <View
-        style={[
-          styles.cardMethodWrapper,
-          selectedMethod === 'card' && styles.methodCardSelected,
-        ]}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => onSelectMethod('card')}
-          style={styles.cardHeader}>
-          <View style={styles.radioRow}>
-            <View
-              style={[
-                styles.radioOuter,
-                selectedMethod === 'card' && styles.radioOuterSelected,
-              ]}>
-              {selectedMethod === 'card' && <View style={styles.radioInner} />}
-            </View>
-            <View style={styles.methodInfo}>
-              <Text style={styles.methodName}>Mercado Pago / Tarjetas</Text>
-              <Text style={styles.methodDesc}>Crédito y Débito hasta 6 cuotas</Text>
-            </View>
-          </View>
-
-          <View style={styles.cardLogos}>
-            <View style={styles.cardBadge}>
-              <Text style={styles.cardBadgeText}>VISA</Text>
-            </View>
-            <View style={styles.cardBadge}>
-              <Text style={styles.cardBadgeText}>MC</Text>
-            </View>
-            <View style={styles.cardBadge}>
-              <Text style={styles.cardBadgeText}>AMEX</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* Inputs de tarjeta cuando está activo */}
-        {selectedMethod === 'card' && (
-          <View style={styles.cardInputsWrapper}>
-            <View style={styles.inputField}>
-              <Text style={styles.inputFieldLabel}>Número de Tarjeta</Text>
-              <View style={styles.inputWithIcon}>
-                <TextInput
-                  value={cardDetails.cardNumber}
-                  onChangeText={(val) =>
-                    onChangeCardDetails({ ...cardDetails, cardNumber: val })
-                  }
-                  placeholder="4532 •••• •••• 8910"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="numeric"
-                  style={styles.textInput}
-                />
-                <Ionicons name="card-outline" size={18} color="#94A3B8" />
-              </View>
-            </View>
-
-            <View style={styles.rowInputs}>
-              <View style={[styles.inputField, { flex: 1 }]}>
-                <Text style={styles.inputFieldLabel}>Vencimiento (MM/AA)</Text>
-                <TextInput
-                  value={cardDetails.expiry}
-                  onChangeText={(val) =>
-                    onChangeCardDetails({ ...cardDetails, expiry: val })
-                  }
-                  placeholder="11/28"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="numeric"
-                  maxLength={5}
-                  style={styles.textInput}
-                />
-              </View>
-
-              <View style={[styles.inputField, { flex: 1 }]}>
-                <Text style={styles.inputFieldLabel}>CVV / CVC</Text>
-                <TextInput
-                  value={cardDetails.cvv}
-                  onChangeText={(val) =>
-                    onChangeCardDetails({ ...cardDetails, cvv: val })
-                  }
-                  placeholder="•••"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="numeric"
-                  maxLength={4}
-                  secureTextEntry
-                  style={styles.textInput}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputField}>
-              <Text style={styles.inputFieldLabel}>Nombre en la Tarjeta</Text>
-              <TextInput
-                value={cardDetails.cardHolder}
-                onChangeText={(val) =>
-                  onChangeCardDetails({ ...cardDetails, cardHolder: val })
-                }
-                placeholder="DANIELA MORALES"
-                placeholderTextColor="#94A3B8"
-                autoCapitalize="characters"
-                style={styles.textInput}
-              />
-            </View>
-          </View>
-        )}
-      </View>
-
-      {/* 3. PayPal Express */}
+      {/* 2. Mercado Pago / Tarjetas de Crédito y Débito (Activo principal) */}
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={() => onSelectMethod('paypal')}
+        onPress={() => onSelectMethod('card')}
         style={[
           styles.methodCard,
-          selectedMethod === 'paypal' && styles.methodCardSelected,
+          selectedMethod === 'card' && styles.methodCardSelected,
         ]}>
         <View style={styles.radioRow}>
           <View
             style={[
               styles.radioOuter,
-              selectedMethod === 'paypal' && styles.radioOuterSelected,
+              selectedMethod === 'card' && styles.radioOuterSelected,
             ]}>
-            {selectedMethod === 'paypal' && <View style={styles.radioInner} />}
+            {selectedMethod === 'card' && <View style={styles.radioInner} />}
           </View>
           <View style={styles.methodInfo}>
             <View style={styles.badgeLine}>
-              <Text style={styles.methodName}>PayPal Express</Text>
-              <View style={styles.globalBadge}>
-                <Text style={styles.globalBadgeText}>Global</Text>
+              <Text style={styles.methodName}>Mercado Pago / Tarjetas</Text>
+              <View style={styles.activeTagBadge}>
+                <Text style={styles.activeTagText}>RECOMENDADO</Text>
               </View>
             </View>
             <Text style={styles.methodDesc}>
-              Saldo PayPal o tarjetas internacionales
+              Crédito y Débito hasta 6 cuotas sin interés
             </Text>
           </View>
         </View>
-        <Ionicons name="logo-paypal" size={22} color={Eventia.primary} />
+
+        <View style={styles.cardLogos}>
+          <View style={styles.cardBadge}>
+            <Text style={styles.cardBadgeText}>VISA</Text>
+          </View>
+          <View style={styles.cardBadge}>
+            <Text style={styles.cardBadgeText}>MC</Text>
+          </View>
+          <View style={styles.cardBadge}>
+            <Text style={styles.cardBadgeText}>AMEX</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {/* 3. PayPal Express (Deshabilitado / Próximamente) */}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => handleDisabledMethodPress('PayPal Express')}
+        style={[styles.methodCard, styles.methodCardDisabled]}>
+        <View style={styles.radioRow}>
+          <View style={styles.radioOuterDisabled} />
+          <View style={styles.methodInfo}>
+            <View style={styles.badgeLine}>
+              <Text style={styles.methodNameDisabled}>PayPal Express</Text>
+              <View style={styles.comingSoonBadge}>
+                <Text style={styles.comingSoonText}>PRÓXIMAMENTE</Text>
+              </View>
+            </View>
+            <Text style={styles.methodDescDisabled}>
+              Saldo PayPal y tarjetas internacionales
+            </Text>
+          </View>
+        </View>
+        <Ionicons name="logo-paypal" size={22} color="#94A3B8" />
       </TouchableOpacity>
     </View>
   );
@@ -220,21 +142,19 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
   },
-  cardMethodWrapper: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    overflow: 'hidden',
-  },
   methodCardSelected: {
     borderColor: Eventia.primary,
+    backgroundColor: '#FFFFFF',
+    shadowColor: Eventia.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  cardHeader: {
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  methodCardDisabled: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    opacity: 0.65,
   },
   radioRow: {
     flexDirection: 'row',
@@ -260,6 +180,14 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: Eventia.primary,
   },
+  radioOuterDisabled: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F1F5F9',
+  },
   methodInfo: {
     flex: 1,
     gap: 2,
@@ -268,37 +196,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexWrap: 'wrap',
   },
   methodName: {
     fontSize: 14,
     fontWeight: '700',
     color: '#0B1C30',
   },
+  methodNameDisabled: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+  },
   methodDesc: {
     fontSize: 11,
     color: '#64748B',
   },
-  tapBadge: {
+  methodDescDisabled: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  activeTagBadge: {
     backgroundColor: '#E2DFFF',
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 999,
   },
-  tapBadgeText: {
+  activeTagText: {
     fontSize: 9,
     fontWeight: '800',
     color: Eventia.primary,
   },
-  globalBadge: {
-    backgroundColor: '#DAE2FD',
+  comingSoonBadge: {
+    backgroundColor: '#F1F5F9',
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  globalBadgeText: {
+  comingSoonText: {
     fontSize: 9,
-    fontWeight: '700',
-    color: '#3F465C',
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 0.5,
   },
   cardLogos: {
     flexDirection: 'row',
@@ -315,46 +256,5 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     color: '#334155',
-  },
-  cardInputsWrapper: {
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-    paddingTop: 8,
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
-  inputField: {
-    gap: 4,
-  },
-  inputFieldLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  inputWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-  },
-  textInput: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 13,
-    color: '#0B1C30',
-  },
-  rowInputs: {
-    flexDirection: 'row',
-    gap: 10,
   },
 });
