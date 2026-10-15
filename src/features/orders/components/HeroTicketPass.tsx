@@ -64,7 +64,7 @@ export const HeroTicketPass: React.FC<HeroTicketPassProps> = ({ order }) => {
           onPress={handleShare}
           style={styles.shareBtn}
           hitSlop={8}>
-          <Ionicons name="share-outline" size={18} color="#0B1C30" />
+          <Ionicons name="share-outline" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -172,14 +172,14 @@ export const HeroTicketPass: React.FC<HeroTicketPassProps> = ({ order }) => {
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0B1C30',
+    borderColor: '#2E3135',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 4,
     marginVertical: 4,
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Eventia.primary,
+    backgroundColor: '#4F46E5',
   },
   headerOverlay: {
     position: 'absolute',
@@ -207,13 +207,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(11, 28, 48, 0.25)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
   },
   confirmedBadge: {
     position: 'absolute',
     top: 12,
     left: 12,
-    backgroundColor: '#006E4B',
+    backgroundColor: '#133526',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
@@ -225,10 +225,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#6FFBBE',
+    backgroundColor: '#34D399',
   },
   confirmedBadgeText: {
-    color: '#FFFFFF',
+    color: '#34D399',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(30, 32, 36, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -256,19 +256,19 @@ const styles = StyleSheet.create({
   verifiedTag: {
     fontSize: 10,
     fontWeight: '800',
-    color: Eventia.primary,
+    color: '#818CF8',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
   orderNum: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '600',
   },
   eventTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0B1C30',
+    color: '#FFFFFF',
     lineHeight: 24,
   },
   metaCol: {
@@ -284,18 +284,18 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 6,
-    backgroundColor: '#EFF4FF',
+    backgroundColor: '#2D3142',
     alignItems: 'center',
     justifyContent: 'center',
   },
   metaTextBold: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   metaTextRegular: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
     flexShrink: 1,
   },
   tiersRow: {
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#2A2D32',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -317,13 +317,13 @@ const styles = StyleSheet.create({
   tierPillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   totalBadgeRight: {
     marginLeft: 'auto',
     fontSize: 11,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#94A3B8',
   },
   perforationEdge: {
     flexDirection: 'row',
@@ -336,14 +336,14 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#F8F9FF',
+    backgroundColor: '#000000',
     marginLeft: -10,
   },
   dashedBorder: {
     flex: 1,
     height: 1,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#374151',
     borderStyle: 'dashed',
     marginHorizontal: 8,
   },
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#F8F9FF',
+    backgroundColor: '#000000',
     marginRight: -10,
   },
   qrSection: {
@@ -364,9 +364,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
     borderRadius: 16,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#161719',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
   },
   qrInnerBox: {
     padding: 8,
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   },
   qrStatusText: {
     fontSize: 10,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '500',
   },
   buttonsGrid: {
@@ -399,14 +399,14 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#EFF4FF',
+    backgroundColor: '#2A2D32',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
   secondaryActionText: {
-    color: Eventia.primary,
+    color: '#818CF8',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 42,
     borderRadius: 12,
-    backgroundColor: Eventia.primary,
+    backgroundColor: '#4F46E5',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -107,17 +107,17 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   orderCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 16,
     padding: 14,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
-    elevation: 1,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   orderNumText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -140,13 +140,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   statusPaid: {
-    backgroundColor: '#E6F4EA',
+    backgroundColor: '#133526',
   },
   statusPending: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#382811',
   },
   statusCanceled: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#3B1215',
   },
   statusBadgeText: {
     fontSize: 10,
@@ -154,18 +154,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   statusTextPaid: {
-    color: '#006E4B',
+    color: '#34D399',
   },
   statusTextPending: {
-    color: '#B45309',
+    color: '#FBBF24',
   },
   statusTextCanceled: {
-    color: '#991B1B',
+    color: '#F87171',
   },
   eventTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   metaRow: {
     flexDirection: 'row',
@@ -174,11 +174,11 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
   },
   metaDot: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: '#64748B',
   },
   cardFooter: {
     flexDirection: 'row',
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#2E3135',
     marginTop: 2,
   },
   footerLabel: {
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   footerMethodText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#475569',
+    color: '#CBD5E1',
   },
   footerTotalRight: {
     alignItems: 'flex-end',
@@ -206,27 +206,27 @@ const styles = StyleSheet.create({
   footerAmount: {
     fontSize: 14,
     fontWeight: '800',
-    color: Eventia.primary,
+    color: '#818CF8',
     fontVariant: ['tabular-nums'],
   },
   emptyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
   },
   emptyTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   emptySubtitle: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
     textAlign: 'center',
     maxWidth: 240,
     lineHeight: 16,
