@@ -1,6 +1,8 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatPricePEN } from '@/data/events';
+import { useTheme } from '@/hooks/use-theme';
+import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 
 interface CartSummaryCardProps {
   totalTickets: number;
@@ -8,7 +10,6 @@ interface CartSummaryCardProps {
   igv: number;
   total: number;
   onCheckout: () => void;
-  onClear: () => void;
 }
 
 export function CartSummaryCard({
@@ -17,46 +18,47 @@ export function CartSummaryCard({
   igv,
   total,
   onCheckout,
-  onClear,
 }: CartSummaryCardProps) {
+  const theme = useTheme();
+  const eventia = useEventiaTheme();
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.heading}>Resumen de la compra</Text>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.backgroundElement,
+          borderColor: theme.backgroundSelected,
+        },
+      ]}>
+      <Text style={[styles.heading, { color: theme.text }]}>Resumen de la compra</Text>
 
       <View style={styles.rows}>
         <View style={styles.row}>
-          <Text style={styles.label}>{`Entradas (${totalTickets}):`}</Text>
-          <Text style={styles.value}>{formatPricePEN(subtotal)}</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>{`Entradas (${totalTickets}):`}</Text>
+          <Text style={[styles.value, { color: theme.text }]}>{formatPricePEN(subtotal)}</Text>
         </View>
 
         <View style={styles.row}>
-          <Text style={styles.label}>IGV (18%):</Text>
-          <Text style={styles.value}>{formatPricePEN(igv)}</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>IGV (18%):</Text>
+          <Text style={[styles.value, { color: theme.text }]}>{formatPricePEN(igv)}</Text>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.backgroundSelected }]} />
 
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total a pagar:</Text>
-          <Text style={styles.totalValue}>{formatPricePEN(total)}</Text>
+          <Text style={[styles.totalLabel, { color: theme.text }]}>Total a pagar:</Text>
+          <Text style={[styles.totalValue, { color: eventia.price }]}>{formatPricePEN(total)}</Text>
         </View>
       </View>
 
-      {/* Botón para continuar con el proceso de pago */}
+      {/* Botón para continuar con el proceso de compra */}
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={onCheckout}
-        style={styles.checkoutBtn}>
+        style={[styles.checkoutBtn, { backgroundColor: eventia.primaryContainer }]}>
         <Text style={styles.checkoutBtnText}>Proceder al Pago</Text>
         <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      {/* Botón secundario para vaciar carrito */}
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={onClear}
-        style={styles.clearBtn}>
-        <Text style={styles.clearBtnText}>Vaciar carrito</Text>
       </TouchableOpacity>
     </View>
   );
@@ -126,14 +128,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
-  },
-  clearBtn: {
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  clearBtnText: {
-    color: '#EF4444',
-    fontSize: 13,
-    fontWeight: '600',
   },
 });

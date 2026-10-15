@@ -1,6 +1,8 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatPricePEN } from '@/data/events';
+import { useTheme } from '@/hooks/use-theme';
+import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 
 interface EventCheckoutBarProps {
   totalTickets: number;
@@ -13,18 +15,27 @@ export function EventCheckoutBar({
   subtotal,
   onContinue,
 }: EventCheckoutBarProps) {
+  const theme = useTheme();
+  const eventia = useEventiaTheme();
   const isDisabled = totalTickets === 0;
 
   return (
-    <View style={styles.bar}>
+    <View
+      style={[
+        styles.bar,
+        {
+          backgroundColor: theme.backgroundElement,
+          borderTopColor: theme.backgroundSelected,
+        },
+      ]}>
       {/* Información: Cantidad y Subtotal */}
       <View style={styles.leftCol}>
-        <Text style={styles.countText}>
+        <Text style={[styles.countText, { color: theme.textSecondary }]}>
           {totalTickets === 0
             ? '0 entradas'
             : `${totalTickets} ${totalTickets === 1 ? 'entrada' : 'entradas'}`}
         </Text>
-        <Text style={styles.subtotalPrice}>
+        <Text style={[styles.subtotalPrice, { color: eventia.price }]}>
           {formatPricePEN(subtotal)}
         </Text>
       </View>
@@ -36,7 +47,7 @@ export function EventCheckoutBar({
         disabled={isDisabled}
         style={[
           styles.button,
-          { backgroundColor: isDisabled ? '#94A3B8' : '#4F46E5' },
+          { backgroundColor: isDisabled ? '#94A3B8' : eventia.primaryContainer },
         ]}>
         <Ionicons name="cart" size={18} color="#FFFFFF" />
         <Text style={styles.buttonText}>
