@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -37,6 +37,7 @@ const ERROR_FIELD_ORDER: (keyof RegisterForm)[] = [
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { returnUrl } = useLocalSearchParams<{ returnUrl?: string }>();
   const eventia = useEventiaTheme();
   const form = useRegisterForm();
   const { login } = useAuth();
@@ -87,7 +88,11 @@ export default function RegisterScreen() {
         fullName: `${registered.firstName} ${registered.lastName}`.trim(),
         email: registered.email,
       });
-      router.replace('/');
+      if (returnUrl) {
+        router.replace(returnUrl as never);
+      } else {
+        router.replace('/');
+      }
     } catch (e) {
       if (e instanceof RegisterError) {
         if (e.fields.email) form.setFieldError('email', e.fields.email);
@@ -149,7 +154,7 @@ export default function RegisterScreen() {
               onPress={handleSubmit}
               style={({ pressed }) => [
                 styles.submit,
-                { backgroundColor: eventia.primary },
+                { backgroundColor: eventia.primaryContainer },
                 (pressed || submitting) && styles.pressed,
               ]}>
               {submitting ? (
@@ -161,11 +166,17 @@ export default function RegisterScreen() {
               )}
             </Pressable>
 
-            <Link href="/login" asChild>
+            <Link
+              href={
+                returnUrl
+                  ? { pathname: '/login', params: { returnUrl } }
+                  : '/login'
+              }
+              asChild>
               <Pressable style={styles.loginLink}>
                 <ThemedText type="small" themeColor="textSecondary">
                   ¿Ya tienes cuenta?{' '}
-                  <ThemedText type="smallBold" style={{ color: eventia.primary }}>
+                  <ThemedText type="smallBold" style={{ color: eventia.primaryContainer }}>
                     Inicia sesión
                   </ThemedText>
                 </ThemedText>

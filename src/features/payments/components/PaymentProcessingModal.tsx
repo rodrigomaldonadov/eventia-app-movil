@@ -113,7 +113,7 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(11, 28, 48, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -121,12 +121,14 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 20,
     padding: 24,
+    borderWidth: 1,
+    borderColor: '#2E3135',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 10,
   },
@@ -138,7 +140,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#EFF4FF',
+    backgroundColor: '#2D3142',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
@@ -164,12 +166,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0B1C30',
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#94A3B8',
     textAlign: 'center',
     lineHeight: 18,
     maxWidth: 260,
@@ -177,13 +179,13 @@ const styles = StyleSheet.create({
   amountHighlight: {
     fontSize: 22,
     fontWeight: '900',
-    color: Eventia.primary,
+    color: '#818CF8',
   },
   sslBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#E6F4EA',
+    backgroundColor: '#133526',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
@@ -192,11 +194,11 @@ const styles = StyleSheet.create({
   sslText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#006E4B',
+    color: '#34D399',
   },
   receiptBox: {
     width: '100%',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#161719',
     borderRadius: 12,
     padding: 12,
     gap: 8,
@@ -209,17 +211,17 @@ const styles = StyleSheet.create({
   },
   receiptLabel: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
   },
   receiptValue: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
     fontVariant: ['tabular-nums'],
   },
   errorDescription: {
     fontSize: 13,
-    color: '#DC2626',
+    color: '#F87171',
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -230,7 +232,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     width: '100%',
-    backgroundColor: Eventia.primary,
+    backgroundColor: '#4F46E5',
     borderRadius: 12,
     paddingVertical: 13,
     flexDirection: 'row',
@@ -249,7 +251,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButtonText: {
-    color: '#64748B',
+    color: '#94A3B8',
     fontSize: 13,
     fontWeight: '600',
   },

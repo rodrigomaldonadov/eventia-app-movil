@@ -52,7 +52,7 @@ export default function HomeCatalogScreen() {
 
   return (
       <ThemedView style={styles.container}>
-           <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <SafeAreaView style={styles.safeArea} edges={['bottom']}>
 
         <View style={styles.searchRow}>
           <View style={[styles.searchBox, { backgroundColor: theme.backgroundElement }]}>

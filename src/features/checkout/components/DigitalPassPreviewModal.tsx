@@ -66,7 +66,7 @@ export const DigitalPassPreviewModal: React.FC<DigitalPassPreviewModalProps> = (
                 onPress={() => setVisible(false)}
                 hitSlop={10}
                 style={styles.closeBtn}>
-                <Ionicons name="close" size={20} color="#475569" />
+                <Ionicons name="close" size={20} color="#CBD5E1" />
               </TouchableOpacity>
             </View>
 
@@ -139,14 +139,14 @@ export const DigitalPassPreviewModal: React.FC<DigitalPassPreviewModalProps> = (
 
 const styles = StyleSheet.create({
   triggerCard: {
-    backgroundColor: '#EFF4FF',
+    backgroundColor: '#1E2024',
     borderRadius: 14,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: '#2E3135',
   },
   triggerLeft: {
     flexDirection: 'row',
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#DAE2FD',
+    backgroundColor: '#2D3142',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -168,15 +168,15 @@ const styles = StyleSheet.create({
   triggerTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   triggerSubtitle: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -184,24 +184,26 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 20,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#2E3135',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 8,
   },
   modalHeader: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#161719',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#2E3135',
   },
   modalHeaderTitle: {
     flexDirection: 'row',
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
   modalHeaderTag: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#0B1C30',
+    color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   closeBtn: {
@@ -226,7 +228,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#E6F4EA',
+    backgroundColor: '#133526',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
@@ -235,23 +237,23 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#006E4B',
+    backgroundColor: '#34D399',
   },
   verifiedText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#006E4B',
+    color: '#34D399',
     letterSpacing: 0.5,
   },
   eventTitleText: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0B1C30',
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   ticketDetails: {
     width: '100%',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#161719',
     borderRadius: 12,
     padding: 12,
     gap: 8,
@@ -262,13 +264,13 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#94A3B8',
     letterSpacing: 0.5,
   },
   detailValue: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   perforationWrapper: {
     flexDirection: 'row',
@@ -280,14 +282,14 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     marginLeft: -23,
   },
   dashedLine: {
     flex: 1,
     height: 1,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#374151',
     borderStyle: 'dashed',
     marginHorizontal: 8,
   },
@@ -295,7 +297,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     marginRight: -23,
   },
   qrArea: {
@@ -312,7 +314,7 @@ const styles = StyleSheet.create({
   qrCodeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: Eventia.primary,
+    color: '#818CF8',
     letterSpacing: 1,
     fontVariant: ['tabular-nums'],
   },
@@ -326,7 +328,7 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     margin: 16,
     marginTop: 0,
-    backgroundColor: Eventia.primary,
+    backgroundColor: '#4F46E5',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',

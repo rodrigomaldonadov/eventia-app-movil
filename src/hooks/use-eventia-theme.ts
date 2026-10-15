@@ -10,13 +10,11 @@ export type EventiaTheme = { [K in keyof typeof Eventia]: string };
  * contraste sobre fondos oscuros.
  */
 export function useEventiaTheme(): EventiaTheme {
-  const scheme = useColorScheme();
-  if (scheme !== 'dark') return Eventia;
   return {
     ...Eventia,
-    primary: '#B7B2FF',
-    primaryContainer: '#6E6BF2',
+    primary: '#818CF8',
+    primaryContainer: '#4F46E5',
     price: '#A5A0FF',
-    surfaceLow: '#252B38',
+    surfaceLow: '#212225',
   };
 }

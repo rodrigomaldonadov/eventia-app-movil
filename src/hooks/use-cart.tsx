@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CartItem, CheckoutOrderPayload } from '@/types/cart.types';
 import type { EventItem, TicketType } from '@/types/event.types';
 
@@ -18,37 +18,6 @@ interface CartContextType {
 }
 
 const STORAGE_KEY = '@eventia_cart_v1';
-
-const storage = {
-  getItem: async (key: string): Promise<string | null> => {
-    try {
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
-        return window.localStorage.getItem(key);
-      }
-    } catch {
-      // ignore
-    }
-    return null;
-  },
-  setItem: async (key: string, value: string): Promise<void> => {
-    try {
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(key, value);
-      }
-    } catch {
-      // ignore
-    }
-  },
-  removeItem: async (key: string): Promise<void> => {
-    try {
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(key);
-      }
-    } catch {
-      // ignore
-    }
-  },
-};
 
 let memoryCart: CartItem[] = [];
 
@@ -80,11 +49,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadCart = async () => {
       try {
-        const stored = await storage.getItem(STORAGE_KEY);
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
             setItems(parsed);
+            memoryCart = parsed;
           }
         } else if (memoryCart.length > 0) {
           setItems(memoryCart);
@@ -100,7 +70,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const saveCart = async (newItems: CartItem[]) => {
     setItems(newItems);
     memoryCart = newItems;
-    await storage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+    } catch {
+      // ignore
+    }
   };
 
   // Agrega una entrada específica

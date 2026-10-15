@@ -250,7 +250,7 @@ export function ModalDatosPersonales({
                   onPress={manejarGuardarCorreo}
                   style={({ pressed }) => [
                     estilos.botonGuardarCorreo,
-                    { backgroundColor: temaEventia.primary },
+                    { backgroundColor: temaEventia.primaryContainer },
                     pressed && { opacity: 0.8 },
                   ]}>
                   {guardando ? (

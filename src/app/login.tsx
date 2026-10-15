@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
@@ -15,9 +15,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { verifyCredentials } from '@/services/user-storage';
 import { normalizeEmail, validateEmail, validatePassword } from '@/utils/auth-validation';
+import { useColorScheme } from 'react-native';
 
 const PRIMARY = '#4F46E5';
 const INK = '#091A33';
@@ -26,6 +28,10 @@ const ERROR = '#B42318';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { returnUrl } = useLocalSearchParams<{ returnUrl?: string }>();
+  const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -56,7 +62,11 @@ export default function LoginScreen() {
         fullName: `${account.firstName} ${account.lastName}`.trim(),
         email: account.email,
       }, undefined, remember);
-      router.replace('/');
+      if (returnUrl) {
+        router.replace(returnUrl as never);
+      } else {
+        router.replace('/');
+      }
     } catch {
       setErrors({ form: 'No pudimos iniciar sesión. Intenta de nuevo.' });
     } finally {
@@ -65,8 +75,8 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.page}>
-      <StatusBar style="dark" />
+    <View style={[styles.page, { backgroundColor: theme.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
@@ -76,18 +86,30 @@ export default function LoginScreen() {
             <View style={styles.content}>
               <View style={styles.brandBlock}>
                 <View style={styles.logoWrap}>
-                  <View style={styles.logo}><Text style={styles.logoText}>E</Text></View>
-                  <View style={styles.logoDot} />
+                  <View style={[styles.logo, { backgroundColor: isDark ? '#1E1B4B' : '#E8EEFF' }]}>
+                    <Text style={styles.logoText}>E</Text>
+                  </View>
+                  <View style={[styles.logoDot, { borderColor: theme.background }]} />
                 </View>
-                <Text style={styles.title}>Eventia</Text>
-                <Text style={styles.subtitle}>Tu pasaporte a los mejores eventos y{'\n'}experiencias en vivo</Text>
+                <Text style={[styles.title, { color: theme.text }]}>Eventia</Text>
+                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                  Tu pasaporte a los mejores eventos y{'\n'}experiencias en vivo
+                </Text>
               </View>
 
               <View style={styles.form}>
                 <View>
-                  <Text style={styles.label}>Correo Electrónico</Text>
-                  <View style={[styles.inputShell, !!errors.email && styles.inputError]}>
-                    <Ionicons name="at-outline" size={18} color={MUTED} />
+                  <Text style={[styles.label, { color: theme.text }]}>Correo Electrónico</Text>
+                  <View
+                    style={[
+                      styles.inputShell,
+                      {
+                        backgroundColor: theme.backgroundElement,
+                        borderColor: isDark ? '#374151' : '#CBD5E1',
+                      },
+                      !!errors.email && styles.inputError,
+                    ]}>
+                    <Ionicons name="at-outline" size={18} color={theme.textSecondary} />
                     <TextInput
                       value={email}
                       onChangeText={(value) => {
@@ -95,8 +117,8 @@ export default function LoginScreen() {
                         setErrors((current) => ({ ...current, email: undefined, form: undefined }));
                       }}
                       placeholder="nombre@correo.com"
-                      placeholderTextColor="#8B91A1"
-                      style={styles.input}
+                      placeholderTextColor={theme.textSecondary}
+                      style={[styles.input, { color: theme.text }]}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -111,15 +133,25 @@ export default function LoginScreen() {
 
                 <View>
                   <View style={styles.passwordHeading}>
-                    <Text style={styles.label}>Contraseña</Text>
+                    <Text style={[styles.label, { color: theme.text }]}>Contraseña</Text>
                     <Link href="/forgot-password" asChild>
                       <Pressable accessibilityRole="link" hitSlop={8}>
-                        <Text style={styles.forgotLink}>¿Olvidaste tu contraseña?</Text>
+                        <Text style={[styles.forgotLink, { color: isDark ? '#818CF8' : '#3929D4' }]}>
+                          ¿Olvidaste tu contraseña?
+                        </Text>
                       </Pressable>
                     </Link>
                   </View>
-                  <View style={[styles.inputShell, !!errors.password && styles.inputError]}>
-                    <Ionicons name="lock-closed-outline" size={18} color={MUTED} />
+                  <View
+                    style={[
+                      styles.inputShell,
+                      {
+                        backgroundColor: theme.backgroundElement,
+                        borderColor: isDark ? '#374151' : '#CBD5E1',
+                      },
+                      !!errors.password && styles.inputError,
+                    ]}>
+                    <Ionicons name="lock-closed-outline" size={18} color={theme.textSecondary} />
                     <TextInput
                       value={password}
                       onChangeText={(value) => {
@@ -127,8 +159,8 @@ export default function LoginScreen() {
                         setErrors((current) => ({ ...current, password: undefined, form: undefined }));
                       }}
                       placeholder="••••••••••••"
-                      placeholderTextColor="#8B91A1"
-                      style={styles.input}
+                      placeholderTextColor={theme.textSecondary}
+                      style={[styles.input, { color: theme.text }]}
                       secureTextEntry={!showPassword}
                       autoCapitalize="none"
                       autoComplete="password"
@@ -142,7 +174,11 @@ export default function LoginScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                       hitSlop={8}>
-                      <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={19} color={MUTED} />
+                      <Ionicons
+                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                        size={19}
+                        color={theme.textSecondary}
+                      />
                     </Pressable>
                   </View>
                   {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
@@ -153,33 +189,59 @@ export default function LoginScreen() {
                   onPress={() => setRemember((value) => !value)}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: remember }}>
-                  <View style={[styles.checkbox, remember && styles.checkboxChecked]}>
+                  <View
+                    style={[
+                      styles.checkbox,
+                      { borderColor: isDark ? '#4B5563' : '#9BA3B5' },
+                      remember && styles.checkboxChecked,
+                    ]}>
                     {remember && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
                   </View>
                   <View style={styles.rememberCopy}>
-                    <Text style={styles.rememberTitle}>Mantener sesión iniciada</Text>
-                    <Text style={styles.rememberHint}>Conserva tu acceso en este dispositivo</Text>
+                    <Text style={[styles.rememberTitle, { color: theme.text }]}>
+                      Mantener sesión iniciada
+                    </Text>
+                    <Text style={[styles.rememberHint, { color: theme.textSecondary }]}>
+                      Conserva tu acceso en este dispositivo
+                    </Text>
                   </View>
-                  <Ionicons name="lock-closed-outline" size={16} color={INK} />
+                  <Ionicons name="lock-closed-outline" size={16} color={theme.text} />
                 </Pressable>
 
-                {errors.form ? <Text style={styles.formError} accessibilityRole="alert">{errors.form}</Text> : null}
+                {errors.form ? (
+                  <Text style={styles.formError} accessibilityRole="alert">
+                    {errors.form}
+                  </Text>
+                ) : null}
 
                 <Pressable
                   style={({ pressed }) => [styles.submit, (pressed || submitting) && styles.pressed]}
                   onPress={handleSubmit}
                   disabled={submitting}
                   accessibilityRole="button">
-                  {submitting ? <ActivityIndicator color="#FFFFFF" /> : (
+                  {submitting ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
                     <View style={styles.buttonInner}>
                       <Text style={styles.submitText}>Iniciar Sesión</Text>
                       <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
                     </View>
                   )}
                 </Pressable>
-                <Link href="/register" asChild>
+                <Link
+                  href={
+                    returnUrl
+                      ? { pathname: '/register', params: { returnUrl } }
+                      : '/register'
+                  }
+                  asChild>
                   <Pressable style={styles.registerLink} accessibilityRole="link">
-                    <Text style={styles.registerText}>¿No tienes una cuenta? <Text style={styles.registerEmphasis}>Regístrate</Text></Text>
+                    <Text style={[styles.registerText, { color: theme.textSecondary }]}>
+                      ¿No tienes una cuenta?{' '}
+                      <Text style={[styles.registerEmphasis, { color: isDark ? '#818CF8' : '#3929D4' }]}>
+                        Regístrate
+                      </Text>
+                    </Text>
                   </Pressable>
                 </Link>
               </View>

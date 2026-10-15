@@ -14,7 +14,7 @@ export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({ currentStep = 
         {/* Step 1: Entradas (Completado) */}
         <View style={styles.stepItem}>
           <View style={[styles.circle, styles.circleCompleted]}>
-            <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={14} color="#34D399" />
           </View>
           <Text style={[styles.label, styles.labelCompleted]}>1. Entradas</Text>
         </View>
@@ -79,11 +79,11 @@ export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({ currentStep = 
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    backgroundColor: '#EFF4FF',
+    backgroundColor: '#161719',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#DBEAFE',
+    borderBottomColor: '#2E3135',
   },
   inner: {
     flexDirection: 'row',
@@ -109,13 +109,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   circleCompleted: {
-    backgroundColor: '#006E4B',
+    backgroundColor: '#133526',
   },
   circleActive: {
-    backgroundColor: Eventia.primary,
+    backgroundColor: '#4F46E5',
   },
   circlePending: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#2A2D32',
   },
   connector: {
     flex: 1,
@@ -124,10 +124,10 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   connectorActive: {
-    backgroundColor: 'rgba(53, 37, 205, 0.3)',
+    backgroundColor: '#818CF8',
   },
   connectorPending: {
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#374151',
   },
   label: {
     fontSize: 11,
@@ -135,15 +135,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   labelCompleted: {
-    color: '#006E4B',
+    color: '#34D399',
     fontWeight: '700',
   },
   labelActive: {
-    color: Eventia.primary,
+    color: '#818CF8',
     fontWeight: '800',
   },
   labelPending: {
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '500',
   },
 });

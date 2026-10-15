@@ -113,17 +113,17 @@ export const BuyerInfoCard: React.FC<BuyerInfoCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
     gap: 12,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
-    elevation: 1,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   headerRight: {
     flexDirection: 'row',
@@ -146,30 +146,30 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    backgroundColor: '#E6F4EA',
+    backgroundColor: '#133526',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
   },
   badgePending: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#382811',
   },
   badgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#006E4B',
+    color: '#34D399',
     letterSpacing: 0.5,
   },
   badgeTextPending: {
-    color: '#B45309',
+    color: '#FBBF24',
   },
   editBtn: {
     padding: 4,
     borderRadius: 6,
-    backgroundColor: '#EFF4FF',
+    backgroundColor: '#2A2D32',
   },
   infoBox: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#161719',
     borderRadius: 10,
     padding: 12,
     gap: 8,
@@ -181,16 +181,16 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
   },
   infoValue: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   editForm: {
     gap: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#161719',
     borderRadius: 10,
     padding: 12,
   },
@@ -200,16 +200,16 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#475569',
+    color: '#CBD5E1',
   },
   textInput: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#374151',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 13,
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
 });

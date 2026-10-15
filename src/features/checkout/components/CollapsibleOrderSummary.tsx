@@ -102,16 +102,16 @@ export const CollapsibleOrderSummary: React.FC<CollapsibleOrderSummaryProps> = (
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
     overflow: 'hidden',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
-    elevation: 1,
+    elevation: 2,
   },
   triggerBtn: {
     padding: 14,
@@ -128,18 +128,18 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#EFF4FF',
+    backgroundColor: '#2D3142',
     alignItems: 'center',
     justifyContent: 'center',
   },
   triggerTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   triggerSubtitle: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
   },
   triggerRight: {
     flexDirection: 'row',
@@ -149,17 +149,17 @@ const styles = StyleSheet.create({
   triggerTotal: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#0B1C30',
+    color: '#FFFFFF',
     fontVariant: ['tabular-nums'],
   },
   panelContent: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#161719',
     paddingHorizontal: 14,
     paddingBottom: 14,
     paddingTop: 4,
     gap: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#2E3135',
   },
   itemsList: {
     gap: 8,
@@ -178,22 +178,22 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   itemDetail: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
     marginTop: 1,
   },
   itemPrice: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
     fontVariant: ['tabular-nums'],
   },
   divider: {
     height: 1,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#2E3135',
     marginVertical: 2,
   },
   calcRow: {
@@ -208,35 +208,35 @@ const styles = StyleSheet.create({
   },
   calcLabel: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
   },
   calcValue: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#0B1C30',
+    color: '#FFFFFF',
     fontVariant: ['tabular-nums'],
   },
   totalBox: {
     marginTop: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 10,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
   },
   totalBoxLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#64748B',
+    color: '#94A3B8',
     letterSpacing: 0.5,
   },
   totalBoxAmount: {
     fontSize: 17,
     fontWeight: '900',
-    color: Eventia.primary,
+    color: '#818CF8',
     fontVariant: ['tabular-nums'],
   },
 });

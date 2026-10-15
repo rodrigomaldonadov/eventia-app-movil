@@ -161,7 +161,7 @@ export default function PaymentScreen() {
           </TouchableOpacity>
           <Text style={[styles.topBarTitle, { color: theme.text }]}>Pasarela de Pago Segura</Text>
           <View style={styles.secureBadge}>
-            <Ionicons name="lock-closed" size={16} color="#006E4B" />
+            <Ionicons name="lock-closed" size={16} color="#34D399" />
           </View>
         </View>
       </View>
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   topBar: {
     width: '100%',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   topBarInner: {
     maxWidth: MaxContentWidth,
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   topBarTitle: {
     fontSize: 16,
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E6F4EA',
+    backgroundColor: '#133526',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -361,12 +361,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   sandboxBox: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#1E2024',
     borderRadius: 12,
     padding: 10,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
   },
   sandboxHeader: {
     flexDirection: 'row',
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   sandboxTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#334155',
+    color: '#E2E8F0',
   },
   sandboxButtonsRow: {
     flexDirection: 'row',
@@ -390,47 +390,47 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pillSuccess: {
-    backgroundColor: '#E6F4EA',
+    backgroundColor: '#133526',
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: '#065F46',
   },
   pillTextSuccess: {
-    color: '#065F46',
+    color: '#34D399',
     fontSize: 11,
     fontWeight: '700',
   },
   pillDanger: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#3B1215',
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: '#7F1D1D',
   },
   pillTextDanger: {
-    color: '#991B1B',
+    color: '#F87171',
     fontSize: 11,
     fontWeight: '700',
   },
   pillWarn: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#382811',
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: '#78350F',
   },
   pillTextWarn: {
-    color: '#92400E',
+    color: '#FBBF24',
     fontSize: 11,
     fontWeight: '700',
   },
   formCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 14,
     padding: 14,
     gap: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
   },
   formSectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   inputGroup: {
     gap: 4,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#475569',
+    color: '#CBD5E1',
   },
   cvvLabelRow: {
     flexDirection: 'row',
@@ -448,43 +448,43 @@ const styles = StyleSheet.create({
   inputWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#161719',
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#374151',
     borderRadius: 10,
     paddingHorizontal: 12,
   },
   textInput: {
     flex: 1,
     fontSize: 14,
-    color: '#0B1C30',
+    color: '#FFFFFF',
     paddingVertical: 10,
   },
   textInputRegular: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#161719',
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#374151',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   rowInputs: {
     flexDirection: 'row',
     gap: 12,
   },
   payButton: {
-    backgroundColor: Eventia.primary,
+    backgroundColor: '#4F46E5',
     borderRadius: 14,
     paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: Eventia.primary,
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 4,
   },
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
   },
   footerSealText: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
     textAlign: 'center',
     flexShrink: 1,
     lineHeight: 16,

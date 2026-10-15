@@ -73,7 +73,7 @@ export const ReservationTimer: React.FC<ReservationTimerProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -81,12 +81,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
-    elevation: 1,
+    elevation: 2,
   },
   leftRow: {
     flexDirection: 'row',
@@ -97,19 +97,19 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#DAE2FD',
+    backgroundColor: '#2D3142',
     alignItems: 'center',
     justifyContent: 'center',
   },
   caption: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '500',
   },
   timeText: {
     fontSize: 15,
     fontWeight: '800',
-    color: Eventia.primary,
+    color: '#818CF8',
     fontVariant: ['tabular-nums'],
   },
   timeTextExpired: {
@@ -122,16 +122,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: '#6FFBBE',
+    backgroundColor: '#133526',
   },
   badgeExpired: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#3B1215',
   },
   pulseDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#006E4B',
+    backgroundColor: '#34D399',
   },
   pulseDotExpired: {
     backgroundColor: '#EF4444',
@@ -139,10 +139,10 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#002113',
+    color: '#34D399',
     letterSpacing: 0.5,
   },
   badgeTextExpired: {
-    color: '#991B1B',
+    color: '#F87171',
   },
 });

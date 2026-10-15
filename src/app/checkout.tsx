@@ -36,8 +36,14 @@ import type {
 export default function CheckoutScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { items, totalTickets, subtotal, igv, total, clearCart } = useCart();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace({ pathname: '/login', params: { returnUrl: '/checkout' } });
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   // Datos del Comprador
   const [buyer, setBuyer] = useState<BuyerInfo>({
@@ -164,7 +170,7 @@ export default function CheckoutScreen() {
           </View>
 
           <View style={styles.secureHeaderBadge}>
-            <Ionicons name="shield-checkmark" size={16} color="#006E4B" />
+            <Ionicons name="shield-checkmark" size={16} color="#34D399" />
           </View>
         </View>
       </View>
@@ -260,7 +266,7 @@ const styles = StyleSheet.create({
   topBar: {
     width: '100%',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   topBarInner: {
     maxWidth: MaxContentWidth,
@@ -278,7 +284,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   topTitleBox: {
     alignItems: 'center',
@@ -294,7 +300,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E6F4EA',
+    backgroundColor: '#133526',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -324,7 +330,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#1E2024',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -335,13 +341,13 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#94A3B8',
     textAlign: 'center',
     maxWidth: 280,
     lineHeight: 20,
   },
   emptyBtn: {
-    backgroundColor: Eventia.primary,
+    backgroundColor: '#4F46E5',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,

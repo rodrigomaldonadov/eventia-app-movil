@@ -54,9 +54,7 @@ export default function TicketsScreen() {
   const activeHeroOrder = upcomingOrders[0];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <EventiaHeader />
-
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -66,7 +64,7 @@ export default function TicketsScreen() {
         }>
         <View style={styles.mainWrapper}>
           {/* Segmented Control Tabs (Stitch Vista 8) */}
-          <View style={styles.segmentedContainer}>
+          <View style={[styles.segmentedContainer, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]}>
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setActiveTab('upcoming')}
@@ -77,11 +75,12 @@ export default function TicketsScreen() {
               <Ionicons
                 name="ticket"
                 size={16}
-                color={activeTab === 'upcoming' ? '#FFFFFF' : '#64748B'}
+                color={activeTab === 'upcoming' ? '#FFFFFF' : theme.textSecondary}
               />
               <Text
                 style={[
                   styles.segmentLabel,
+                  { color: activeTab === 'upcoming' ? '#FFFFFF' : theme.textSecondary },
                   activeTab === 'upcoming' && styles.segmentLabelActive,
                 ]}>
                 Próximos eventos
@@ -113,11 +112,12 @@ export default function TicketsScreen() {
               <Ionicons
                 name="time-outline"
                 size={16}
-                color={activeTab === 'past' ? '#FFFFFF' : '#64748B'}
+                color={activeTab === 'past' ? '#FFFFFF' : theme.textSecondary}
               />
               <Text
                 style={[
                   styles.segmentLabel,
+                  { color: activeTab === 'past' ? '#FFFFFF' : theme.textSecondary },
                   activeTab === 'past' && styles.segmentLabelActive,
                 ]}>
                 Pasados
@@ -154,7 +154,7 @@ export default function TicketsScreen() {
                   {/* Sección: Otras órdenes recientes */}
                   {upcomingOrders.length > 1 && (
                     <View style={styles.sectionHeaderRow}>
-                      <Text style={styles.sectionTitle}>Otras entradas activas</Text>
+                      <Text style={[styles.sectionTitle, { color: theme.text }]}>Otras entradas activas</Text>
                     </View>
                   )}
                   {upcomingOrders.length > 1 && (
@@ -162,12 +162,12 @@ export default function TicketsScreen() {
                   )}
                 </>
               ) : (
-                <View style={styles.emptyState}>
-                  <View style={styles.emptyIconCircle}>
-                    <Ionicons name="ticket-outline" size={42} color="#94A3B8" />
+                <View style={[styles.emptyState, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]}>
+                  <View style={[styles.emptyIconCircle, { backgroundColor: theme.backgroundSelected }]}>
+                    <Ionicons name="ticket-outline" size={42} color={theme.textSecondary} />
                   </View>
-                  <Text style={styles.emptyTitle}>No tienes entradas activas</Text>
-                  <Text style={styles.emptySubtitle}>
+                  <Text style={[styles.emptyTitle, { color: theme.text }]}>No tienes entradas activas</Text>
+                  <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
                     Explora el catálogo de conciertos y festivales para reservar tus boletos inteligentes.
                   </Text>
                 </View>
@@ -177,8 +177,8 @@ export default function TicketsScreen() {
             /* PESTAÑA PASADOS: HISTORIAL DE COMPRAS */
             <View style={styles.tabContentCol}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Historial de Compras</Text>
-                <Text style={styles.sectionCountText}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Historial de Compras</Text>
+                <Text style={[styles.sectionCountText, { color: theme.textSecondary }]}>
                   {pastOrders.length} {pastOrders.length === 1 ? 'orden' : 'órdenes'}
                 </Text>
               </View>
@@ -190,7 +190,7 @@ export default function TicketsScreen() {
           <View style={styles.bottomSpacer} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

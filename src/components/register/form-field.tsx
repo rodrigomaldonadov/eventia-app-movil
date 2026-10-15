@@ -30,11 +30,11 @@ export function FormField({ label, required, error, prefix, style, ...inputProps
           styles.box,
           {
             backgroundColor: theme.backgroundElement,
-            borderColor: error ? ERROR_COLOR : 'transparent',
+            borderColor: error ? ERROR_COLOR : '#374151',
           },
         ]}>
         {prefix ? (
-          <ThemedText type="smallBold" style={{ color: eventia.primary }}>
+          <ThemedText type="smallBold" style={{ color: eventia.primaryContainer }}>
             {prefix}
           </ThemedText>
         ) : null}

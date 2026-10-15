@@ -157,7 +157,7 @@ export default function ProfileScreen() {
 
   return (
     <ThemedView style={estilos.contenedorRaiz}>
-      <SafeAreaView style={estilos.areaSegura} edges={['top']}>
+      <SafeAreaView style={estilos.areaSegura} edges={['bottom']}>
         <ScrollView
           style={estilos.contenedorScroll}
           contentContainerStyle={estilos.contenidoScroll}
