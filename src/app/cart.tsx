@@ -1,4 +1,5 @@
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
+import { useAuth } from '@/hooks/use-auth';
 import { useCart } from '@/hooks/use-cart';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { CartItemCard } from '@/components/cart/CartItemCard';
@@ -20,6 +22,7 @@ export default function CartScreen() {
   const router = useRouter();
   const theme = useTheme();
   const eventia = useEventiaTheme();
+  const { isAuthenticated } = useAuth();
   const {
     items,
     totalTickets,
@@ -31,6 +34,25 @@ export default function CartScreen() {
   } = useCart();
 
   const handleCheckout = () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Inicia sesión para continuar',
+        'Debes iniciar sesión con tu cuenta de Eventia para proceder al pago de tus entradas. Tu selección permanecerá guardada en el carrito.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Iniciar Sesión',
+            onPress: () =>
+              router.push({
+                pathname: '/login',
+                params: { returnUrl: '/checkout' },
+              }),
+          },
+        ]
+      );
+      return;
+    }
+
     // Redirige al flujo de checkout seguro (Módulo 6: Compras)
     router.push('/checkout');
   };

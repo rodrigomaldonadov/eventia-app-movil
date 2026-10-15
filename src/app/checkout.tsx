@@ -36,8 +36,14 @@ import type {
 export default function CheckoutScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { items, totalTickets, subtotal, igv, total, clearCart } = useCart();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace({ pathname: '/login', params: { returnUrl: '/checkout' } });
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   // Datos del Comprador
   const [buyer, setBuyer] = useState<BuyerInfo>({
