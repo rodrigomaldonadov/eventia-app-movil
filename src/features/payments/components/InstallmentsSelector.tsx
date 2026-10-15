@@ -74,15 +74,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   optionsList: {
     gap: 8,
   },
   optionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
     borderRadius: 12,
     padding: 12,
     flexDirection: 'row',
@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   optionCardSelected: {
-    borderColor: Eventia.primary,
-    backgroundColor: '#F8F9FF',
+    borderColor: '#818CF8',
+    backgroundColor: '#1E1B4B',
   },
   radioRow: {
     flexDirection: 'row',
@@ -103,33 +103,33 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: '#94A3B8',
+    borderColor: '#4B5563',
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioCircleSelected: {
-    borderColor: Eventia.primary,
+    borderColor: '#818CF8',
   },
   radioDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Eventia.primary,
+    backgroundColor: '#818CF8',
   },
   optionMainText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   optionMainTextSelected: {
-    color: Eventia.primary,
+    color: '#818CF8',
   },
   optionSubText: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
   },
   zeroInterestBadge: {
-    backgroundColor: '#E6F4EA',
+    backgroundColor: '#133526',
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
@@ -137,11 +137,11 @@ const styles = StyleSheet.create({
   zeroInterestText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#006E4B',
+    color: '#34D399',
   },
   totalCalcText: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '500',
   },
 });
