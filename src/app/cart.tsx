@@ -1,5 +1,4 @@
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useCart } from '@/hooks/use-cart';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { CartItemCard } from '@/components/cart/CartItemCard';
@@ -19,6 +19,7 @@ import { CartSummaryCard } from '@/components/cart/CartSummaryCard';
 export default function CartScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const eventia = useEventiaTheme();
   const {
     items,
     totalTickets,
@@ -27,7 +28,6 @@ export default function CartScreen() {
     total,
     updateQuantity,
     removeItem,
-    clearCart,
   } = useCart();
 
   const handleCheckout = () => {
@@ -35,30 +35,19 @@ export default function CartScreen() {
     router.replace('/');
   };
 
-  const handleClear = () => {
-    Alert.alert(
-      'Vaciar carrito',
-      '¿Estás seguro de que deseas eliminar todas las entradas de tu carrito?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Vaciar', style: 'destructive', onPress: clearCart },
-      ],
-    );
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header Superior */}
-      <View style={[styles.topBar, { backgroundColor: theme.background }]}>
+      <View style={[styles.topBar, { backgroundColor: theme.background, borderBottomColor: theme.backgroundSelected }]}>
         <View style={styles.topBarInner}>
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Volver"
             onPress={() => router.back()}
             hitSlop={10}
-            style={styles.backBtn}>
+            style={[styles.backBtn, { backgroundColor: theme.backgroundSelected }]}>
             <Ionicons name="arrow-back" size={22} color={theme.text} />
           </TouchableOpacity>
 
@@ -73,19 +62,19 @@ export default function CartScreen() {
       {items.length === 0 ? (
         /* Estado Vacío */
         <View style={styles.emptyContainer}>
-          <View style={styles.emptyIconCircle}>
-            <Ionicons name="cart-outline" size={48} color="#94A3B8" />
+          <View style={[styles.emptyIconCircle, { backgroundColor: theme.backgroundSelected }]}>
+            <Ionicons name="cart-outline" size={48} color={theme.textSecondary} />
           </View>
           <Text style={[styles.emptyTitle, { color: theme.text }]}>
             Tu carrito está vacío
           </Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
             Aún no has agregado entradas. Explora nuestro catálogo y selecciona tus eventos favoritos.
           </Text>
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => router.push('/')}
-            style={styles.exploreBtn}>
+            style={[styles.exploreBtn, { backgroundColor: eventia.primaryContainer }]}>
             <Ionicons name="sparkles-outline" size={18} color="#FFFFFF" />
             <Text style={styles.exploreBtnText}>Explorar Eventos</Text>
           </TouchableOpacity>
@@ -116,7 +105,6 @@ export default function CartScreen() {
               igv={igv}
               total={total}
               onCheckout={handleCheckout}
-              onClear={handleClear}
             />
           </View>
         </ScrollView>
