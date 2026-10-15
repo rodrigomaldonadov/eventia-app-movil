@@ -44,7 +44,7 @@ export function TarjetaPerfilUsuario({
           <View
             style={[
               estilos.insigniaCamara,
-              { backgroundColor: temaEventia.primary, borderColor: tema.backgroundElement },
+              { backgroundColor: temaEventia.primaryContainer, borderColor: tema.backgroundElement },
             ]}>
             <Ionicons name="camera" size={12} color="#FFFFFF" />
           </View>

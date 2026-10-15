@@ -258,7 +258,7 @@ export function ModalCambiarFotoPerfil({
                 onPress={confirmarCambioDeFoto}
                 style={({ pressed }) => [
                   estilos.botonGuardar,
-                  { backgroundColor: temaEventia.primary },
+                  { backgroundColor: temaEventia.primaryContainer },
                   pressed && { opacity: 0.8 },
                 ]}>
                 {guardando ? (

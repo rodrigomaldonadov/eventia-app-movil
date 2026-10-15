@@ -99,7 +99,7 @@ export function BannerProximoEvento({
               onPress={cerrarModalQR}
               style={[
                 estilos.botonCerrarQR,
-                { backgroundColor: temaEventia.primary },
+                { backgroundColor: temaEventia.primaryContainer },
               ]}>
               <ThemedText type="smallBold" style={estilos.textoBotonCerrarQR}>
                 Listo / Cerrar

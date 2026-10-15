@@ -148,25 +148,40 @@ export function EventiaHeader() {
             </>
           ) : (
             <View style={styles.authButtonsRow}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Iniciar sesión"
-                onPress={() => router.push('/login')}
-                style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
-                <Text style={styles.authText}>
-                  Iniciar
-                </Text>
-              </Pressable>
+              {pathname !== '/login' && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Iniciar sesión"
+                  onPress={() => router.push('/login')}
+                  style={({ pressed }) => [
+                    styles.outlineButton,
+                    {
+                      backgroundColor: theme.backgroundElement,
+                      borderColor: theme.backgroundSelected,
+                    },
+                    pressed && styles.pressed,
+                  ]}>
+                  <Text style={[styles.outlineButtonText, { color: theme.text }]}>
+                    Iniciar
+                  </Text>
+                </Pressable>
+              )}
 
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Registrarse"
-                onPress={() => router.push('/register')}
-                style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
-                <Text style={styles.authText}>
-                  Registrarse
-                </Text>
-              </Pressable>
+              {pathname !== '/register' && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Registrarse"
+                  onPress={() => router.push('/register')}
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    { backgroundColor: eventia.primaryContainer },
+                    pressed && styles.pressed,
+                  ]}>
+                  <Text style={styles.primaryButtonText}>
+                    Registrarse
+                  </Text>
+                </Pressable>
+              )}
             </View>
           )}
         </View>
@@ -289,18 +304,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  loginButton: {
+  outlineButton: {
     borderWidth: 1,
-    borderColor: '#CBD5E1',
     borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  authText: {
+  outlineButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#0F172A',
+  },
+  primaryButton: {
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   pressed: {
     opacity: 0.8,
