@@ -149,7 +149,7 @@ export default function RegisterScreen() {
               onPress={handleSubmit}
               style={({ pressed }) => [
                 styles.submit,
-                { backgroundColor: eventia.primary },
+                { backgroundColor: eventia.primaryContainer },
                 (pressed || submitting) && styles.pressed,
               ]}>
               {submitting ? (
@@ -165,7 +165,7 @@ export default function RegisterScreen() {
               <Pressable style={styles.loginLink}>
                 <ThemedText type="small" themeColor="textSecondary">
                   ¿Ya tienes cuenta?{' '}
-                  <ThemedText type="smallBold" style={{ color: eventia.primary }}>
+                  <ThemedText type="smallBold" style={{ color: eventia.primaryContainer }}>
                     Inicia sesión
                   </ThemedText>
                 </ThemedText>
