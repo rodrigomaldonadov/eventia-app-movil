@@ -32,6 +32,7 @@ export function ProfileSectionCard({ title, children }: ProfileSectionCardProps)
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     gap: Spacing.two,
   },
   sectionTitle: {
@@ -40,6 +41,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.one,
   },
   card: {
+    width: '100%',
     borderRadius: 18,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,

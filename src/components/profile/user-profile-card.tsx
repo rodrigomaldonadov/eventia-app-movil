@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -14,7 +13,6 @@ export interface PropiedadesTarjetaUsuario {
   nombreCompleto?: string;
   correo?: string;
   urlFoto?: string;
-  alPresionarEditar: () => void;
   alPresionarCambiarFoto: () => void;
 }
 
@@ -22,7 +20,6 @@ export function TarjetaPerfilUsuario({
   nombreCompleto = 'Daniela Morales',
   correo = 'daniela@eventia.io',
   urlFoto,
-  alPresionarEditar,
   alPresionarCambiarFoto,
 }: PropiedadesTarjetaUsuario) {
   const tema = useTheme();
@@ -31,7 +28,7 @@ export function TarjetaPerfilUsuario({
   return (
     <View style={[estilos.tarjeta, { backgroundColor: tema.backgroundElement }]}>
       <View style={estilos.filaInformacion}>
-        {/* Avatar interactivo */}
+        {/* Avatar */}
         <Pressable
           accessibilityLabel="Cambiar foto de perfil"
           accessibilityRole="button"
@@ -81,25 +78,13 @@ export function TarjetaPerfilUsuario({
           </View>
         </View>
       </View>
-
-      {/* Botón para editar datos personales */}
-      <Pressable
-        accessibilityLabel="Editar correo y contraseña"
-        accessibilityRole="button"
-        onPress={alPresionarEditar}
-        style={({ pressed }) => [
-          estilos.botonEditar,
-          { backgroundColor: temaEventia.surfaceLow },
-          pressed && estilos.botonEditarPresionado,
-        ]}>
-        <Ionicons name="pencil" size={17} color={temaEventia.primary} />
-      </Pressable>
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
   tarjeta: {
+    width: '100%',
     borderRadius: 20,
     padding: Spacing.three,
     flexDirection: 'row',
@@ -176,16 +161,5 @@ const estilos = StyleSheet.create({
   textoPildora: {
     fontSize: 11,
     fontWeight: '600',
-  },
-  botonEditar: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: Spacing.two,
-  },
-  botonEditarPresionado: {
-    opacity: 0.7,
   },
 });

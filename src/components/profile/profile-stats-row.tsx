@@ -77,6 +77,7 @@ export function FilaEstadisticasPerfil({
 
 const estilos = StyleSheet.create({
   filaEstadisticas: {
+    width: '100%',
     flexDirection: 'row',
     gap: Spacing.two,
   },

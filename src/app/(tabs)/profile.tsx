@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -10,7 +10,6 @@ import {
   ModalCambiarContrasena,
   ModalCambiarFotoPerfil,
   ModalDatosPersonales,
-  ModalPreferenciasUsuario,
   ProfileOptionRow,
   ProfileSectionCard,
   TarjetaPerfilUsuario,
@@ -151,9 +150,9 @@ export default function ProfileScreen() {
   const textoCategorias =
     preferencias.categoriasFavoritas && preferencias.categoriasFavoritas.length > 0
       ? preferencias.categoriasFavoritas.slice(0, 2).join(', ') +
-        (preferencias.categoriasFavoritas.length > 2
-          ? ` (+${preferencias.categoriasFavoritas.length - 2})`
-          : '')
+      (preferencias.categoriasFavoritas.length > 2
+        ? ` (+${preferencias.categoriasFavoritas.length - 2})`
+        : '')
       : 'Sin categorías';
 
   return (
@@ -168,7 +167,6 @@ export default function ProfileScreen() {
             nombreCompleto={user?.fullName || datosPersonales.nombreCompleto}
             correo={user?.email || datosPersonales.correo}
             urlFoto={user?.avatarUrl}
-            alPresionarEditar={abrirModalDatosPersonales}
             alPresionarCambiarFoto={abrirModalFoto}
           />
 
@@ -180,7 +178,7 @@ export default function ProfileScreen() {
             recinto="Parc del Fòrum"
           />
 
-          <ProfileSectionCard title="Cuenta & Seguridad">
+          <ProfileSectionCard title="Cuenta y Seguridad">
             <ProfileOptionRow
               icon="person-outline"
               title="Datos personales"
@@ -200,39 +198,7 @@ export default function ProfileScreen() {
               icon="card-outline"
               title="Métodos de pago"
               valueText="Visa •••• 4092"
-              onPress={() => {}}
-            />
-          </ProfileSectionCard>
-
-          <ProfileSectionCard title="Preferencias">
-            <ProfileOptionRow
-              icon="notifications-outline"
-              title="Alertas de venta y fechas"
-              subtitle="Recordatorios anticipados"
-              isSwitch
-              switchValue={preferencias.alertasVentas}
-              onSwitchChange={manejarCambioAlertaVentas}
-              showDivider
-            />
-            <ProfileOptionRow
-              icon="options-outline"
-              title="Música & Categorías"
-              valueText={textoCategorias}
-              onPress={abrirModalPreferencias}
-            />
-          </ProfileSectionCard>
-
-          <ProfileSectionCard title="Asistencia">
-            <ProfileOptionRow
-              icon="help-circle-outline"
-              title="Ayuda y Soporte 24/7"
-              showDivider
-              onPress={() => {}}
-            />
-            <ProfileOptionRow
-              icon="shield-checkmark-outline"
-              title="Políticas y privacidad"
-              onPress={() => {}}
+              onPress={() => { }}
             />
           </ProfileSectionCard>
 
@@ -245,12 +211,14 @@ export default function ProfileScreen() {
               pressed && estilos.botonCerrarSesionPresionado,
             ]}
             onPress={manejarCerrarSesion}>
-            <Ionicons name="log-out-outline" size={18} color={temaEventia.dangerText} />
-            <ThemedText
-              type="smallBold"
-              style={[estilos.textoCerrarSesion, { color: temaEventia.dangerText }]}>
-              Cerrar Sesión
-            </ThemedText>
+            <View style={estilos.filaBotonCerrarInterno}>
+              <Ionicons name="log-out-outline" size={18} color={temaEventia.dangerText} />
+              <ThemedText
+                type="smallBold"
+                style={[estilos.textoCerrarSesion, { color: temaEventia.dangerText }]}>
+                Cerrar Sesión
+              </ThemedText>
+            </View>
           </Pressable>
         </ScrollView>
 
@@ -272,13 +240,6 @@ export default function ProfileScreen() {
           fotoActual={user?.avatarUrl}
           alCerrar={cerrarModalFoto}
           alGuardarNuevaFoto={manejarActualizarFoto}
-        />
-
-        <ModalPreferenciasUsuario
-          visible={modalPreferenciasVisible}
-          preferenciasActuales={preferencias}
-          alCerrar={cerrarModalPreferencias}
-          alGuardarPreferencias={manejarActualizarPreferencias}
         />
       </SafeAreaView>
     </ThemedView>
@@ -306,14 +267,21 @@ const estilos = StyleSheet.create({
     gap: Spacing.three,
   },
   botonCerrarSesion: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    width: '100%',
+    alignSelf: 'center',
     borderRadius: 16,
     paddingVertical: 14,
     marginTop: Spacing.one,
     marginBottom: Spacing.four,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filaBotonCerrarInterno: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
   },
   botonCerrarSesionPresionado: {
     opacity: 0.75,
