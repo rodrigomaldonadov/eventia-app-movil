@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
@@ -28,6 +28,7 @@ const ERROR = '#B42318';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { returnUrl } = useLocalSearchParams<{ returnUrl?: string }>();
   const theme = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -61,7 +62,11 @@ export default function LoginScreen() {
         fullName: `${account.firstName} ${account.lastName}`.trim(),
         email: account.email,
       }, undefined, remember);
-      router.replace('/');
+      if (returnUrl) {
+        router.replace(returnUrl as never);
+      } else {
+        router.replace('/');
+      }
     } catch {
       setErrors({ form: 'No pudimos iniciar sesión. Intenta de nuevo.' });
     } finally {
@@ -223,7 +228,13 @@ export default function LoginScreen() {
                     </View>
                   )}
                 </Pressable>
-                <Link href="/register" asChild>
+                <Link
+                  href={
+                    returnUrl
+                      ? { pathname: '/register', params: { returnUrl } }
+                      : '/register'
+                  }
+                  asChild>
                   <Pressable style={styles.registerLink} accessibilityRole="link">
                     <Text style={[styles.registerText, { color: theme.textSecondary }]}>
                       ¿No tienes una cuenta?{' '}
