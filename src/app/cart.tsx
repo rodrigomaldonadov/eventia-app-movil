@@ -31,8 +31,8 @@ export default function CartScreen() {
   } = useCart();
 
   const handleCheckout = () => {
-    // Redirige al inicio para que el flujo quede listo para conectar la pasarela de pagos
-    router.replace('/');
+    // Redirige al flujo de checkout seguro (Módulo 6: Compras)
+    router.push('/checkout');
   };
 
   return (
