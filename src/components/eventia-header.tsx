@@ -36,7 +36,7 @@ export function EventiaHeader() {
   const handleLogout = async () => {
     setOpen(false);
     await logout();
-    router.push('/');
+    router.replace('/');
   };
 
   const menuItems = [

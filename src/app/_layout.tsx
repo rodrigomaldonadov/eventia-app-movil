@@ -28,7 +28,8 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="event/[id]" options={{ title: 'Detalle del evento', header: undefined }} />
             <Stack.Screen name="cart" options={{ title: 'Carrito de compras', header: undefined }} />
-            <Stack.Screen name="login" options={{ title: 'Ingresar' }} />
+            <Stack.Screen name="login" options={{ headerShown: false }} />
+            <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
             <Stack.Screen name="register" options={{ title: 'Crear cuenta' }} />
           </Stack>
         </ThemeProvider>

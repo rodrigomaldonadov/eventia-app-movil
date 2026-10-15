@@ -81,12 +81,11 @@ export default function RegisterScreen() {
         email: form.values.email,
         password: form.values.password,
       };
-      await registerUser(userData);
-      const fullName = `${form.values.firstName} ${form.values.lastName}`.trim();
-      // TODO(Integrante 1): reemplazar este login automático por el flujo real de sesión (token y redirección por rol).
+      const registered = await registerUser(userData);
       await login({
-        fullName: fullName || form.values.email.split('@')[0],
-        email: form.values.email.trim().toLowerCase(),
+        id: registered.id,
+        fullName: `${registered.firstName} ${registered.lastName}`.trim(),
+        email: registered.email,
       });
       router.replace('/');
     } catch (e) {
