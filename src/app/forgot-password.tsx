@@ -5,9 +5,11 @@ import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { requestPasswordReset, resetPassword } from '@/services/user-storage';
 import { normalizeEmail, validateEmail, validateNewPassword } from '@/utils/auth-validation';
+import { useColorScheme } from 'react-native';
 
 const PRIMARY = '#4F46E5';
 const INK = '#091A33';
@@ -15,6 +17,9 @@ const ERROR = '#B42318';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { logout } = useAuth();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -65,28 +70,40 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={styles.page}>
-      <StatusBar style="dark" />
+    <View style={[styles.page, { backgroundColor: theme.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
             <View style={styles.content}>
-              <View style={styles.icon}><Ionicons name={done ? 'checkmark-circle-outline' : 'key-outline'} size={30} color={PRIMARY} /></View>
-              <Text style={styles.title}>{done ? 'Contraseña actualizada' : 'Recupera tu contraseña'}</Text>
-              <Text style={styles.description}>
+              <View style={[styles.icon, { backgroundColor: isDark ? '#1E1B4B' : '#E8EEFF' }]}>
+                <Ionicons name={done ? 'checkmark-circle-outline' : 'key-outline'} size={30} color={PRIMARY} />
+              </View>
+              <Text style={[styles.title, { color: theme.text }]}>
+                {done ? 'Contraseña actualizada' : 'Recupera tu contraseña'}
+              </Text>
+              <Text style={[styles.description, { color: theme.textSecondary }]}>
                 {done ? 'Ya puedes iniciar sesión con tu nueva contraseña.' : 'Ingresa el correo de tu cuenta para restablecer tu contraseña.'}
               </Text>
 
               {!done && (
                 <View style={styles.form}>
-                  <Text style={styles.label}>Correo Electrónico</Text>
+                  <Text style={[styles.label, { color: theme.text }]}>Correo Electrónico</Text>
                   <TextInput
-                    style={[styles.input, !!demoCode && styles.disabledInput]}
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: theme.backgroundElement,
+                        color: theme.text,
+                        borderColor: isDark ? '#374151' : '#CBD5E1',
+                      },
+                      !!demoCode && styles.disabledInput,
+                    ]}
                     value={email}
                     onChangeText={(value) => { setEmail(value); setError(null); }}
                     editable={!demoCode}
                     placeholder="nombre@correo.com"
-                    placeholderTextColor="#8B91A1"
+                    placeholderTextColor={theme.textSecondary}
                     autoCapitalize="none"
                     keyboardType="email-address"
                     autoComplete="email"
@@ -95,39 +112,62 @@ export default function ForgotPasswordScreen() {
 
                   {demoCode ? (
                     <>
-                      <View style={styles.demoBox}>
+                      <View style={[styles.demoBox, { backgroundColor: isDark ? '#1E1B4B' : '#EDEBFF' }]}>
                         <Text style={styles.demoTitle}>Modo demostración</Text>
-                        <Text style={styles.demoText}>No hay servicio de correo configurado. Tu código local es <Text style={styles.demoCode}>{demoCode}</Text>. Vence en 10 minutos.</Text>
+                        <Text style={[styles.demoText, { color: isDark ? '#C7D2FE' : '#403B68' }]}>
+                          No hay servicio de correo configurado. Tu código local es <Text style={styles.demoCode}>{demoCode}</Text>. Vence en 10 minutos.
+                        </Text>
                       </View>
-                      <Text style={styles.label}>Código de recuperación</Text>
+                      <Text style={[styles.label, { color: theme.text }]}>Código de recuperación</Text>
                       <TextInput
-                        style={styles.input}
+                        style={[
+                          styles.input,
+                          {
+                            backgroundColor: theme.backgroundElement,
+                            color: theme.text,
+                            borderColor: isDark ? '#374151' : '#CBD5E1',
+                          },
+                        ]}
                         value={code}
                         onChangeText={(value) => { setCode(value); setError(null); }}
                         placeholder="000000"
-                        placeholderTextColor="#8B91A1"
+                        placeholderTextColor={theme.textSecondary}
                         keyboardType="number-pad"
                         maxLength={6}
                         accessibilityLabel="Código de recuperación"
                       />
-                      <Text style={styles.label}>Nueva contraseña</Text>
+                      <Text style={[styles.label, { color: theme.text }]}>Nueva contraseña</Text>
                       <TextInput
-                        style={styles.input}
+                        style={[
+                          styles.input,
+                          {
+                            backgroundColor: theme.backgroundElement,
+                            color: theme.text,
+                            borderColor: isDark ? '#374151' : '#CBD5E1',
+                          },
+                        ]}
                         value={password}
                         onChangeText={(value) => { setPassword(value); setError(null); }}
                         placeholder="Mínimo 8 caracteres, letras y números"
-                        placeholderTextColor="#8B91A1"
+                        placeholderTextColor={theme.textSecondary}
                         secureTextEntry
                         autoCapitalize="none"
                         accessibilityLabel="Nueva contraseña"
                       />
-                      <Text style={styles.label}>Confirmar contraseña</Text>
+                      <Text style={[styles.label, { color: theme.text }]}>Confirmar contraseña</Text>
                       <TextInput
-                        style={styles.input}
+                        style={[
+                          styles.input,
+                          {
+                            backgroundColor: theme.backgroundElement,
+                            color: theme.text,
+                            borderColor: isDark ? '#374151' : '#CBD5E1',
+                          },
+                        ]}
                         value={confirmPassword}
                         onChangeText={(value) => { setConfirmPassword(value); setError(null); }}
                         placeholder="Repite tu contraseña"
-                        placeholderTextColor="#8B91A1"
+                        placeholderTextColor={theme.textSecondary}
                         secureTextEntry
                         autoCapitalize="none"
                         accessibilityLabel="Confirmar contraseña"
@@ -141,7 +181,7 @@ export default function ForgotPasswordScreen() {
                   </Pressable>
                   {demoCode ? (
                     <Pressable onPress={handleRequest} disabled={loading} accessibilityRole="button" style={styles.secondaryButton}>
-                      <Text style={styles.secondaryText}>Generar otro código</Text>
+                      <Text style={[styles.secondaryText, { color: isDark ? '#818CF8' : PRIMARY }]}>Generar otro código</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -154,8 +194,8 @@ export default function ForgotPasswordScreen() {
               ) : (
                 <Link href="/login" asChild>
                   <Pressable style={styles.backLink} accessibilityRole="link">
-                    <Ionicons name="arrow-back" size={16} color={PRIMARY} />
-                    <Text style={styles.backText}>Volver a iniciar sesión</Text>
+                    <Ionicons name="arrow-back" size={16} color={isDark ? '#818CF8' : PRIMARY} />
+                    <Text style={[styles.backText, { color: isDark ? '#818CF8' : PRIMARY }]}>Volver a iniciar sesión</Text>
                   </Pressable>
                 </Link>
               )}
