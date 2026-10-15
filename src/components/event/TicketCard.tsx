@@ -30,7 +30,7 @@ export function TicketCard({
     <View
       style={[
         styles.card,
-        { backgroundColor: theme.backgroundElement },
+        { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected },
         quantity > 0 && { borderColor: eventia.primary, borderWidth: 1.5 },
       ]}>
       {/* Cabecera del ticket: nombre y precio */}
@@ -72,19 +72,19 @@ export function TicketCard({
       ) : null}
 
       {/* Pie del ticket: Disponibilidad y botones de cantidad */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: theme.backgroundSelected }]}>
         <ThemedText type="small" themeColor="textSecondary" style={styles.availabilityText}>
           {isSoldOut ? 'No disponible para compra' : 'Disponibilidad inmediata'}
         </ThemedText>
 
         {isSoldOut ? (
-          <View style={styles.disabledAction}>
+          <View style={[styles.disabledAction, { backgroundColor: theme.backgroundSelected }]}>
             <ThemedText type="small" themeColor="textSecondary">
               Agotado
             </ThemedText>
           </View>
         ) : (
-          <View style={styles.counterRow}>
+          <View style={[styles.counterRow, { backgroundColor: theme.backgroundSelected }]}>
             {/* Botón Disminuir [-] */}
             <Pressable
               accessibilityRole="button"
@@ -94,18 +94,19 @@ export function TicketCard({
               hitSlop={8}
               style={({ pressed }) => [
                 styles.counterBtn,
+                { backgroundColor: theme.backgroundElement },
                 quantity === 0 && styles.counterBtnDisabled,
                 pressed && styles.pressed,
               ]}>
               <Ionicons
                 name="remove"
                 size={18}
-                color={quantity === 0 ? '#9CA3AF' : eventia.primary}
+                color={quantity === 0 ? theme.textSecondary : eventia.primary}
               />
             </Pressable>
 
             {/* Cantidad seleccionada */}
-            <ThemedText type="smallBold" style={styles.counterValue}>
+            <ThemedText type="smallBold" style={[styles.counterValue, { color: theme.text }]}>
               {quantity}
             </ThemedText>
 
@@ -118,13 +119,14 @@ export function TicketCard({
               hitSlop={8}
               style={({ pressed }) => [
                 styles.counterBtn,
+                { backgroundColor: theme.backgroundElement },
                 isMaxReached && styles.counterBtnDisabled,
                 pressed && styles.pressed,
               ]}>
               <Ionicons
                 name="add"
                 size={18}
-                color={isMaxReached ? '#9CA3AF' : eventia.primary}
+                color={isMaxReached ? theme.textSecondary : eventia.primary}
               />
             </Pressable>
           </View>
