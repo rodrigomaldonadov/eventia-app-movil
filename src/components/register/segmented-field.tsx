@@ -40,11 +40,14 @@ export function SegmentedField<T extends string>({
               onPress={() => onChange(option.value)}
               style={[
                 styles.option,
-                { backgroundColor: selected ? eventia.primary : theme.backgroundElement },
+                {
+                  backgroundColor: selected ? eventia.primaryContainer : theme.backgroundElement,
+                  borderColor: selected ? eventia.primaryContainer : '#374151',
+                },
               ]}>
               <ThemedText
                 type="smallBold"
-                style={{ color: selected ? '#FFFFFF' : theme.textSecondary }}>
+                style={{ color: selected ? '#FFFFFF' : theme.text }}>
                 {option.label}
               </ThemedText>
             </Pressable>
@@ -58,5 +61,5 @@ export function SegmentedField<T extends string>({
 const styles = StyleSheet.create({
   wrapper: { gap: Spacing.one },
   row: { flexDirection: 'row', gap: Spacing.two },
-  option: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 12 },
+  option: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 12, borderWidth: 1.5 },
 });
