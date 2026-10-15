@@ -65,15 +65,15 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   isLoading: true,
   isAuthenticated: false,
-  login: async () => {},
-  logout: async () => {},
-  actualizarUsuario: async () => {},
-  updateUser: async () => {},
+  login: async () => { },
+  logout: async () => { },
+  actualizarUsuario: async () => { },
+  updateUser: async () => { },
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     let active = true;
@@ -101,7 +101,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (userData: User, authToken?: string, remember = true) => {
-    // Token local de demostración: no representa una sesión validada por un servidor.
     const nextSession: Session = {
       user: userData,
       token: authToken || Crypto.randomUUID(),
@@ -143,10 +142,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.getItem(STORAGE_KEY)
         .then((stored) => {
           if (stored) {
-            AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession)).catch(() => {});
+            AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession)).catch(() => { });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
       return nextSession;
     });
