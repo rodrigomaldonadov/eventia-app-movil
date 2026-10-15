@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -108,7 +108,6 @@ export function ModalDatosPersonales({
             { backgroundColor: tema.backgroundElement },
           ]}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Cabecera */}
             <View style={estilos.cabecera}>
               <View
                 style={[
@@ -192,7 +191,7 @@ export function ModalDatosPersonales({
             <View style={estilos.seccionEdicionCorreo}>
               <View style={estilos.cabeceraCorreo}>
                 <ThemedText type="smallBold" style={estilos.etiquetaCorreo}>
-                  Correo Electrónico (Modificable)
+                  Correo Electrónico
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary" style={estilos.pistaCorreo}>
                   Puedes cambiarlo en cualquier momento

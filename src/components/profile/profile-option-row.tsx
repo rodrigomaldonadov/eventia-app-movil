@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -7,23 +7,11 @@ import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export interface ProfileOptionRowProps {
-  /** Nombre del icono de Ionicons */
   icon: keyof typeof Ionicons.glyphMap;
-  /** Título principal de la opción */
   title: string;
-  /** Subtítulo descriptivo secundario (opcional) */
   subtitle?: string;
-  /** Texto a la derecha antes de la flecha (opcional, ej: "Electrónica, Indie") */
   valueText?: string;
-  /** Si es true, muestra un interruptor (Switch) en lugar de una flecha */
-  isSwitch?: boolean;
-  /** Estado activo/inactivo del switch */
-  switchValue?: boolean;
-  /** Función que se ejecuta al cambiar el switch */
-  onSwitchChange?: (value: boolean) => void;
-  /** Acción al tocar la fila */
   onPress?: () => void;
-  /** Si debe mostrar la línea divisoria inferior */
   showDivider?: boolean;
 }
 
@@ -32,9 +20,6 @@ export function ProfileOptionRow({
   title,
   subtitle,
   valueText,
-  isSwitch = false,
-  switchValue = false,
-  onSwitchChange,
   onPress,
   showDivider = false,
 }: ProfileOptionRowProps) {
@@ -44,39 +29,30 @@ export function ProfileOptionRow({
   return (
     <>
       <Pressable
-        disabled={isSwitch}
         onPress={onPress}
         style={({ pressed }) => [
-          styles.row,
-          pressed && !isSwitch && styles.pressed,
+          styles.pressable,
+          pressed && styles.pressed,
         ]}>
-        {/* Cajita redondeada para el icono con fondo tenue */}
-        <View style={[styles.iconContainer, { backgroundColor: eventia.surfaceLow }]}>
-          <Ionicons name={icon} size={20} color={eventia.primary} />
-        </View>
+        <View style={styles.row}>
+          <View style={[styles.iconContainer, { backgroundColor: eventia.surfaceLow }]}>
+            <Ionicons name={icon} size={20} color={eventia.primary} />
+          </View>
 
-        {/* Textos centrales: Título y subtítulo */}
-        <View style={styles.textContainer}>
-          <ThemedText type="smallBold" style={styles.title}>
-            {title}
-          </ThemedText>
-          {subtitle ? (
-            <ThemedText type="small" themeColor="textSecondary" style={styles.subtitle}>
-              {subtitle}
+          {/* Textos centrales: Título y subtítulo */}
+          <View style={styles.textContainer}>
+            <ThemedText type="smallBold" style={styles.title}>
+              {title}
             </ThemedText>
-          ) : null}
-        </View>
+            {subtitle ? (
+              <ThemedText type="small" themeColor="textSecondary" style={styles.subtitle}>
+                {subtitle}
+              </ThemedText>
+            ) : null}
+          </View>
 
-        {/* Lado derecho: Switch o (Texto de valor + Flecha) */}
-        <View style={styles.rightContainer}>
-          {isSwitch ? (
-            <Switch
-              value={switchValue}
-              onValueChange={onSwitchChange}
-              trackColor={{ false: '#D1D5DB', true: eventia.primaryContainer }}
-              thumbColor="#FFFFFF"
-            />
-          ) : (
+          {/* Lado derecho: Valor opcional + Flecha */}
+          <View style={styles.rightContainer}>
             <View style={styles.valueRow}>
               {valueText ? (
                 <ThemedText type="small" themeColor="textSecondary" style={styles.valueText}>
@@ -85,11 +61,11 @@ export function ProfileOptionRow({
               ) : null}
               <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
             </View>
-          )}
+          </View>
         </View>
       </Pressable>
 
-      {/* Línea divisoria suave entre opciones de la misma tarjeta */}
+      {/* Línea divisoria */}
       {showDivider ? (
         <View style={[styles.divider, { backgroundColor: theme.backgroundSelected }]} />
       ) : null}
@@ -98,7 +74,11 @@ export function ProfileOptionRow({
 }
 
 const styles = StyleSheet.create({
+  pressable: {
+    width: '100%',
+  },
   row: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: Spacing.two,
@@ -140,6 +120,6 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginVertical: Spacing.one,
-    marginLeft: 42 + Spacing.three, // Alineado con el inicio del texto
+    marginLeft: 42 + Spacing.three,
   },
 });

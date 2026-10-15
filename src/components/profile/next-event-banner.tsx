@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -14,7 +14,7 @@ export interface PropiedadesBannerProximoEvento {
 }
 
 /**
- * Banner informativo que destaca el próximo evento del usuario con acceso rápido a su QR.
+ * Banner de eventos del usuario
  */
 export function BannerProximoEvento({
   nombreEvento = 'Sónar Festival • Barcelona',
@@ -86,7 +86,7 @@ export function BannerProximoEvento({
               Presenta este código en la entrada de {recinto}
             </ThemedText>
 
-            {/* Simulación visual del código QR */}
+            {/* Código QR */}
             <View style={estilos.cajaCodigoQR}>
               <Ionicons name="qr-code" size={160} color={temaEventia.primary} />
             </View>
@@ -114,6 +114,7 @@ export function BannerProximoEvento({
 
 const estilos = StyleSheet.create({
   tarjetaEvento: {
+    width: '100%',
     borderRadius: 20,
     padding: Spacing.three,
     flexDirection: 'row',

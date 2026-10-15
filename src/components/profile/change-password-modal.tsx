@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -25,7 +25,7 @@ export interface PropiedadesModalCambiarContrasena {
 }
 
 /**
- * Modal exclusivo para actualizar la contraseña del usuario.
+ * Modal para actualizar la contraseña del usuario
  */
 export function ModalCambiarContrasena({
   visible,
@@ -121,7 +121,6 @@ export function ModalCambiarContrasena({
             { backgroundColor: tema.backgroundElement },
           ]}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Cabecera del modal */}
             <View style={estilos.cabecera}>
               <View
                 style={[
@@ -141,7 +140,6 @@ export function ModalCambiarContrasena({
               </ThemedText>
             </View>
 
-            {/* Mensaje de Éxito */}
             {mensajeExito ? (
               <View
                 style={[
@@ -157,7 +155,6 @@ export function ModalCambiarContrasena({
               </View>
             ) : null}
 
-            {/* Mensaje de Error General */}
             {errores.general ? (
               <View
                 style={[
