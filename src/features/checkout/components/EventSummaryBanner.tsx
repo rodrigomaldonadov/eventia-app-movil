@@ -49,26 +49,26 @@ export const EventSummaryBanner: React.FC<EventSummaryBannerProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 14,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
-    elevation: 1,
+    elevation: 2,
   },
   imageWrapper: {
     width: 64,
     height: 64,
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#EFF4FF',
+    backgroundColor: '#2A2D32',
   },
   image: {
     width: '100%',
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DAE2FD',
+    backgroundColor: '#2D3142',
   },
   infoCol: {
     flex: 1,
@@ -88,13 +88,13 @@ const styles = StyleSheet.create({
   categoryBadge: {
     fontSize: 10,
     fontWeight: '800',
-    color: Eventia.primary,
+    color: '#818CF8',
     letterSpacing: 0.6,
   },
   title: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   metaRow: {
     flexDirection: 'row',
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
     flexShrink: 1,
   },
 });
