@@ -1,5 +1,5 @@
 import api from './api';
-import { getEventById as getMockEventById, EVENTS } from '@/data/events';
+import { eventStorage } from './eventStorage';
 import type {
   EventDetailResponse,
   EventItem,
@@ -15,16 +15,15 @@ const isBackendConfigured = Boolean(process.env.EXPO_PUBLIC_API_URL);
 /**
  * Servicio para consultar eventos y validar disponibilidad de entradas.
  * Si hay un backend configurado, realiza las peticiones HTTP;
- * de lo contrario, responde usando los datos locales de la aplicación.
+ * de lo contrario, responde usando la persistencia reactiva en AsyncStorage (eventStorage).
  */
 export const eventService = {
   /**
-   * Obtiene la lista general de eventos.
-   * Endpoint: GET /api/events
+   * Obtiene la lista general de eventos (con filtrado opcional por categoría o búsqueda).
    */
   async getEvents(params?: { category?: string; search?: string }): Promise<EventItem[]> {
     if (!isBackendConfigured) {
-      return EVENTS;
+      return eventStorage.getEvents(params);
     }
 
     try {
@@ -32,19 +31,18 @@ export const eventService = {
       if (Array.isArray(response.data)) {
         return response.data;
       }
-      return response.data.data ?? EVENTS;
+      return response.data.data ?? eventStorage.getEvents(params);
     } catch {
-      return EVENTS;
+      return eventStorage.getEvents(params);
     }
   },
 
   /**
    * Obtiene el detalle de un evento por su ID.
-   * Endpoint: GET /api/events/:id
    */
   async getEventById(id: string): Promise<EventItem | null> {
     if (!isBackendConfigured) {
-      return getMockEventById(id) ?? null;
+      return eventStorage.getEventById(id);
     }
 
     try {
@@ -54,13 +52,12 @@ export const eventService = {
       }
       return (response.data as EventItem) ?? null;
     } catch {
-      return getMockEventById(id) ?? null;
+      return eventStorage.getEventById(id);
     }
   },
 
   /**
    * Consulta el stock disponible de un tipo de entrada.
-   * Endpoint: GET /api/events/:eventId/tickets/:ticketId/availability
    */
   async checkTicketAvailability(
     eventId: string,
@@ -77,7 +74,7 @@ export const eventService = {
       }
     }
 
-    const event = getMockEventById(eventId);
+    const event = await eventStorage.getEventById(eventId);
     const ticket = event?.tickets.find((t) => t.id === ticketId);
     const available = ticket?.available ?? 0;
 
@@ -90,7 +87,6 @@ export const eventService = {
 
   /**
    * Valida la cantidad de entradas seleccionadas frente al stock disponible.
-   * Endpoint: POST /api/events/:eventId/validate-tickets
    */
   async validateTickets(payload: ValidateTicketsPayload): Promise<ValidateTicketsResponse> {
     if (isBackendConfigured) {
@@ -105,7 +101,7 @@ export const eventService = {
       }
     }
 
-    const event = getMockEventById(payload.eventId);
+    const event = await eventStorage.getEventById(payload.eventId);
     if (!event) {
       return {
         valid: false,
@@ -142,6 +138,13 @@ export const eventService = {
       message: 'Entradas validadas correctamente.',
     };
   },
+
+  // Funciones CRUD para Administrador
+  createEvent: eventStorage.createEvent.bind(eventStorage),
+  updateEvent: eventStorage.updateEvent.bind(eventStorage),
+  deleteEvent: eventStorage.deleteEvent.bind(eventStorage),
+  decrementBatchStock: eventStorage.decrementBatchStock.bind(eventStorage),
+  getDashboardMetrics: eventStorage.getDashboardMetrics.bind(eventStorage),
 };
 
 export default eventService;

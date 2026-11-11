@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
+import api from '@/services/api';
 import { verifyCredentials } from '@/services/user-storage';
 import { normalizeEmail, validateEmail, validatePassword } from '@/utils/auth-validation';
 import { useColorScheme } from 'react-native';
@@ -52,15 +53,59 @@ export default function LoginScreen() {
     setErrors({});
     setSubmitting(true);
     try {
+      // 1. Intentar autenticar contra el backend Spring Boot
+      try {
+        const response = await api.post('/auth/login', { email: email.trim().toLowerCase(), password });
+        if (response.data && response.data.success && response.data.user) {
+          const u = response.data.user;
+          await login(
+            {
+              id: String(u.id),
+              fullName: u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+              email: u.email,
+              role: (u.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'),
+              status: (u.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE'),
+              phoneNumber: u.phoneNumber,
+            },
+            response.data.token,
+            remember
+          );
+          if (returnUrl) {
+            router.replace(returnUrl as never);
+          } else {
+            router.replace('/');
+          }
+          return;
+        }
+      } catch (backendError: any) {
+        if (backendError?.response?.data?.message) {
+          // Si el backend devolvió un mensaje específico de credenciales incorrectas o inactiva
+          const msg = backendError.response.data.message;
+          if (backendError.response.status === 401) {
+            setErrors({ form: msg || 'Correo o contraseña incorrectos. Intenta de nuevo.' });
+            return;
+          }
+        }
+        // Si fue error de red/servidor apagado, continuará al fallback local
+      }
+
+      // 2. Fallback local si el backend no respondió
       const account = await verifyCredentials(email, password);
       if (!account) {
         setErrors({ form: 'Correo o contraseña incorrectos. Intenta de nuevo.' });
+        return;
+      }
+      if (account.status === 'INACTIVE') {
+        setErrors({ form: 'Esta cuenta está desactivada. Contacta al administrador para su restauración.' });
         return;
       }
       await login({
         id: account.id,
         fullName: `${account.firstName} ${account.lastName}`.trim(),
         email: account.email,
+        role: account.role || 'CLIENT',
+        status: account.status || 'ACTIVE',
+        phoneNumber: account.phoneNumber,
       }, undefined, remember);
       if (returnUrl) {
         router.replace(returnUrl as never);
@@ -208,6 +253,35 @@ export default function LoginScreen() {
                   <Ionicons name="lock-closed-outline" size={16} color={theme.text} />
                 </Pressable>
 
+                {/* Accesos rápidos de prueba para evaluación */}
+                <View style={[styles.testBox, { backgroundColor: isDark ? '#1F2937' : '#EFF6FF', borderColor: isDark ? '#374151' : '#BFDBFE' }]}>
+                  <Text style={[styles.testBoxTitle, { color: isDark ? '#93C5FD' : '#1D4ED8' }]}>
+                    Cuentas de prueba (Toca para autocompletar):
+                  </Text>
+                  <View style={styles.testButtonsRow}>
+                    <Pressable
+                      style={[styles.testBadge, { backgroundColor: PRIMARY }]}
+                      onPress={() => {
+                        setEmail('admin@eventia.com');
+                        setPassword('Cliente123#');
+                        setErrors({});
+                      }}>
+                      <Ionicons name="shield-checkmark" size={12} color="#FFFFFF" />
+                      <Text style={styles.testBadgeText}>Admin</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.testBadge, { backgroundColor: isDark ? '#374151' : '#E2E8F0' }]}
+                      onPress={() => {
+                        setEmail('cliente@eventia.com');
+                        setPassword('Cliente123#');
+                        setErrors({});
+                      }}>
+                      <Ionicons name="person" size={12} color={isDark ? '#FFFFFF' : '#1E293B'} />
+                      <Text style={[styles.testBadgeText, { color: isDark ? '#FFFFFF' : '#1E293B' }]}>Cliente</Text>
+                    </Pressable>
+                  </View>
+                </View>
+
                 {errors.form ? (
                   <Text style={styles.formError} accessibilityRole="alert">
                     {errors.form}
@@ -275,6 +349,11 @@ const styles = StyleSheet.create({
   forgotLink: { fontSize: 11, fontWeight: '600', color: '#3929D4', marginBottom: 3 },
   errorText: { color: ERROR, fontSize: 11, marginTop: 4 },
   formError: { color: ERROR, fontSize: 12, textAlign: 'center' },
+  testBox: { padding: 8, borderRadius: 10, borderWidth: 1, gap: 6, marginVertical: 4 },
+  testBoxTitle: { fontSize: 10, fontWeight: '700' },
+  testButtonsRow: { flexDirection: 'row', gap: 8 },
+  testBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6 },
+  testBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   rememberRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, marginBottom: 2, gap: 9, minHeight: 30 },
   checkbox: { width: 16, height: 16, borderRadius: 5, borderWidth: 1, borderColor: '#9BA3B5', alignItems: 'center', justifyContent: 'center' },
   checkboxChecked: { backgroundColor: '#3929D4', borderColor: '#3929D4' },

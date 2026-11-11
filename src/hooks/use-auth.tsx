@@ -2,6 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+export type UserRole = 'CLIENT' | 'ADMIN';
+export type UserStatus = 'ACTIVE' | 'INACTIVE';
+
 /**
  * Preferencias configurables por el usuario dentro de su perfil.
  */
@@ -18,7 +21,10 @@ export interface User {
   id?: string;
   fullName: string;
   email: string;
+  role: UserRole;
+  status?: UserStatus;
   avatarUrl?: string;
+  phoneNumber?: string;
   preferences?: UserPreferences;
 }
 
@@ -35,6 +41,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   login: (userData: User, token?: string, remember?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   /** Función en español para actualizar los datos del usuario en la sesión */
@@ -65,6 +72,7 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   isLoading: true,
   isAuthenticated: false,
+  isAdmin: false,
   login: async () => { },
   logout: async () => { },
   actualizarUsuario: async () => { },
@@ -158,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token: session?.token ?? null,
         isLoading,
         isAuthenticated: !!session,
+        isAdmin: session?.user?.role === 'ADMIN',
         login,
         logout,
         actualizarUsuario,

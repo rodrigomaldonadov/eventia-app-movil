@@ -23,6 +23,7 @@ import { InstallmentsSelector } from '@/features/payments/components/Installment
 import { PaymentProcessingModal } from '@/features/payments/components/PaymentProcessingModal';
 import { paymentService } from '@/features/payments/services/paymentService';
 import { orderService } from '@/features/orders/services/orderService';
+import { eventService } from '@/services/eventService';
 import type {
   PaymentGatewayType,
   PaymentTransactionRequest,
@@ -137,6 +138,15 @@ export default function PaymentScreen() {
         paymentMethod: `Mercado Pago (${request.card?.brand?.toUpperCase() || 'Tarjeta'})`,
         authorizationCode: res.authorizationCode,
       });
+
+      // Descontar stock real en el almacenamiento reactivo de eventos
+      await eventService.decrementBatchStock(
+        items.map((i) => ({
+          eventId: i.eventId,
+          ticketId: i.ticketId,
+          quantity: i.quantity,
+        }))
+      );
     }
 
     setIsProcessing(false);

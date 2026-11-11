@@ -23,7 +23,7 @@ export function EventiaHeader() {
   const eventia = useEventiaTheme();
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isLoading, logout } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading, logout } = useAuth();
   const { totalTickets } = useCart();
   const isAuthScreen = pathname === '/login' || pathname === '/register';
   const [open, setOpen] = useState(false);
@@ -40,6 +40,7 @@ export function EventiaHeader() {
   };
 
   const menuItems = [
+    ...(isAdmin ? [{ label: '⚡ Panel Administrador', href: '/admin/dashboard' }] : []),
     { label: 'Explorar', href: '/' },
     { label: 'Mis Tickets', href: '/tickets' },
     { label: 'Mi Carrito', href: '/cart' },

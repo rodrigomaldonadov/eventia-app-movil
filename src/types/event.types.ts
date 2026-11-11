@@ -11,9 +11,12 @@ export type EventCategory =
   | 'Teatro'
   | 'Networking';
 
+export type TicketTier = 'General' | 'VIP' | 'VIP+';
+
 export interface TicketType {
   id: string;
   name: string;
+  tier?: TicketTier;
   price: number;
   available: number;
   description?: string;

@@ -36,7 +36,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const tema = useTheme();
   const temaEventia = useEventiaTheme();
-  const { user, isAuthenticated, isLoading, logout, actualizarUsuario } = useAuth();
+  const { user, isAuthenticated, isAdmin, isLoading, logout, actualizarUsuario } = useAuth();
 
   // Modales
   const [modalDatosPersonalesVisible, setModalDatosPersonalesVisible] = useState(false);
@@ -177,6 +177,34 @@ export default function ProfileScreen() {
             fechaHora="Viernes, 18 Julio • 20:30 hrs"
             recinto="Parc del Fòrum"
           />
+
+          {isAdmin && (
+            <ProfileSectionCard title="Administración Eventia">
+              <ProfileOptionRow
+                icon="speedometer-outline"
+                title="Dashboard de Métricas"
+                subtitle="Ingresos, tickets vendidos y stock"
+                valueText="Métricas"
+                showDivider
+                onPress={() => router.push('/admin/dashboard' as never)}
+              />
+              <ProfileOptionRow
+                icon="calendar-outline"
+                title="Gestión de Eventos"
+                subtitle="Crear, editar, eliminar y entradas"
+                valueText="Catálogo"
+                showDivider
+                onPress={() => router.push('/admin/events' as never)}
+              />
+              <ProfileOptionRow
+                icon="people-outline"
+                title="Gestión de Usuarios"
+                subtitle="Roles, accesos y restauración"
+                valueText="Usuarios"
+                onPress={() => router.push('/admin/users' as never)}
+              />
+            </ProfileSectionCard>
+          )}
 
           <ProfileSectionCard title="Cuenta y Seguridad">
             <ProfileOptionRow

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
+import api from '@/services/api';
 import type { CreateOrderParams, Order } from '../types/order.types';
 
 const ORDERS_STORAGE_KEY = '@eventia_orders_v1';
@@ -136,6 +137,24 @@ export const orderService = {
       await AsyncStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
     } catch (e) {
       console.warn('[OrderService]: Error al guardar la orden en AsyncStorage', e);
+    }
+
+    // Registrar en el backend Spring Boot (MySQL) si está disponible
+    try {
+      await api.post('/api/orders', {
+        buyerName: params.buyerName,
+        buyerEmail: params.buyerEmail,
+        buyerDocument: params.buyerDocument,
+        paymentMethod: params.paymentMethod,
+        totalAmount: params.total,
+        items: params.items.map((it) => ({
+          ticketTypeId: Number(it.ticketId) || 1,
+          quantity: it.quantity,
+          unitPrice: it.price,
+        })),
+      });
+    } catch (e) {
+      // Ignorar fallo de red para no bloquear la experiencia de compra
     }
 
     return newOrder;
