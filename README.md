@@ -1,14 +1,5 @@
 # 🎟️ Eventia
 
-## Acceso local de demostración
-
-1. Crea una cuenta desde **Regístrate**. El registro guarda el usuario en AsyncStorage del dispositivo.
-2. En **Iniciar sesión**, usa el correo y la contraseña de esa cuenta. El token de sesión local se recupera al volver a abrir la app si activas **Mantener sesión iniciada**.
-3. Para cerrar sesión, abre el menú de cuenta y selecciona **Cerrar sesión**.
-4. En **¿Olvidaste tu contraseña?**, el código de recuperación se muestra en la pantalla porque no hay servicio de correo configurado. El código vence en 10 minutos y permite cambiar la contraseña local.
-
-La autenticación y el token actuales son una simulación local; no existe una API de login ni validación de token del servidor. AsyncStorage no cifra los datos. Para producción se requiere un backend de autenticación, envío de correos y almacenamiento seguro de credenciales y tokens.
-
 > Aplicación móvil para la búsqueda, reserva y venta de entradas para eventos.
 
 Eventia es una plataforma móvil que conecta a usuarios interesados en asistir a eventos con organizadores que necesitan una solución para publicar eventos, gestionar entradas y controlar sus ventas.

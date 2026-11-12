@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -8,12 +8,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/use-theme';
 import { EventiaHeader } from '@/components/eventia-header';
 import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
 
 import { HeroTicketPass } from '@/features/orders/components/HeroTicketPass';
 import { WalletPassBanner } from '@/features/orders/components/WalletPassBanner';
@@ -23,12 +24,22 @@ import type { Order, OrderTabType } from '@/features/orders/types/order.types';
 
 export default function TicketsScreen() {
   const theme = useTheme();
+  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<OrderTabType>('upcoming');
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Guard: sin sesión, redirige al login
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
   const loadOrders = useCallback(async () => {
+    if (!isAuthenticated) return;
     try {
       const data = await orderService.getOrders();
       setOrders(data);
@@ -36,18 +47,20 @@ export default function TicketsScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadOrders();
-    }, [loadOrders]),
-  );
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
 
   const onRefresh = () => {
     setIsRefreshing(true);
     loadOrders();
   };
+
+  if (!isAuthenticated || authLoading) {
+    return null;
+  }
 
   const upcomingOrders = orders.filter((o) => o.isUpcoming);
   const pastOrders = orders.filter((o) => !o.isUpcoming);

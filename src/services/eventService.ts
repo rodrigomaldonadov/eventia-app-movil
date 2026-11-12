@@ -8,31 +8,73 @@ import type {
   ValidateTicketsPayload,
   ValidateTicketsResponse,
 } from '@/types/event.types';
+import {
+  EventDetailBackendDto,
+  EventSummaryBackendDto,
+  mapDetailToEventItem,
+  mapSummaryToEventItem,
+} from '@/utils/eventMapper';
 
 // Comprueba si se ha configurado la URL del backend
 const isBackendConfigured = Boolean(process.env.EXPO_PUBLIC_API_URL);
 
 /**
+ * Página genérica devuelta por el backend (Spring Data Page).
+ */
+interface BackendPage<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
+/**
+ * Filtros soportados por GET /api/events (Integrante 4 · backend):
+ * q, categoryId, dateFrom, dateTo, city.
+ */
+export interface EventFilters {
+  q?: string;
+  categoryId?: string | number;
+  dateFrom?: string; // YYYY-MM-DD
+  dateTo?: string; // YYYY-MM-DD
+  city?: string;
+  page?: number;
+  size?: number;
+}
+
+/**
  * Servicio para consultar eventos y validar disponibilidad de entradas.
- * Si hay un backend configurado, realiza las peticiones HTTP;
- * de lo contrario, responde usando los datos locales de la aplicación.
+ * Conecta con el backend real cuando EXPO_PUBLIC_API_URL está definida;
+ * de lo contrario, usa los datos locales de la aplicación.
  */
 export const eventService = {
   /**
    * Obtiene la lista general de eventos.
-   * Endpoint: GET /api/events
+   * Endpoint: GET /api/events (con filtros opcionales)
+   * Convierte Page<EventSummaryResponseDto> -> EventItem[]
    */
-  async getEvents(params?: { category?: string; search?: string }): Promise<EventItem[]> {
+  async getEvents(filters?: EventFilters): Promise<EventItem[]> {
     if (!isBackendConfigured) {
       return EVENTS;
     }
 
     try {
-      const response = await api.get<EventListResponse | EventItem[]>('/events', { params });
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-      return response.data.data ?? EVENTS;
+      const params: Record<string, string | number | boolean> = {};
+      if (filters?.q) params.q = filters.q;
+      if (filters?.categoryId !== undefined) params.categoryId = filters.categoryId;
+      if (filters?.dateFrom) params.dateFrom = filters.dateFrom;
+      if (filters?.dateTo) params.dateTo = filters.dateTo;
+      if (filters?.city) params.city = filters.city;
+      if (filters?.page !== undefined) params.page = filters.page;
+      if (filters?.size !== undefined) params.size = filters.size;
+
+      const response = await api.get<BackendPage<EventSummaryBackendDto>>('/events', {
+        params,
+      });
+
+      const page = response.data as BackendPage<EventSummaryBackendDto>;
+      return (page.content ?? []).map(mapSummaryToEventItem);
     } catch {
       return EVENTS;
     }
@@ -48,14 +90,44 @@ export const eventService = {
     }
 
     try {
-      const response = await api.get<EventDetailResponse | EventItem>(`/events/${id}`);
-      if ('data' in response.data && response.data.data) {
-        return response.data.data;
-      }
-      return (response.data as EventItem) ?? null;
+      const response = await api.get<EventDetailBackendDto>(`/events/${id}`);
+      return mapDetailToEventItem(response.data);
     } catch {
       return getMockEventById(id) ?? null;
     }
+  },
+
+  /**
+   * Obtiene los eventos del organizador autenticado.
+   * Endpoint: GET /api/events/organizer
+   */
+  async getMyEvents(includeInactive = false): Promise<EventItem[]> {
+    if (!isBackendConfigured) {
+      return EVENTS.filter((e) => e.organizer === 'organizador');
+    }
+
+    try {
+      const response = await api.get<BackendPage<EventSummaryBackendDto>>('/events/organizer', {
+        params: { includeInactive },
+      });
+
+      const page = response.data as BackendPage<EventSummaryBackendDto>;
+      return (page.content ?? []).map(mapSummaryToEventItem);
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Activa o desactiva un evento del organizador (borrado lógico).
+   * Endpoint: PATCH /api/events/{id}/active
+   */
+  async toggleEventActive(eventId: string | number, active: boolean): Promise<void> {
+    if (!isBackendConfigured) return;
+
+    await api.patch(`/events/${eventId}/active`, null, {
+      params: { active },
+    });
   },
 
   /**
