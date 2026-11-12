@@ -1,10 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
+import api from './api';
 
 /**
  * Servicio de perfil de usuario: gestión de datos personales,
  * credenciales, fotos y preferencias en almacenamiento local.
  */
+
+const isBackendConfigured = Boolean(process.env.EXPO_PUBLIC_API_URL);
 
 const CLAVE_PREFERENCIAS_STORAGE = '@eventia/profile_preferences_v1';
 const CLAVE_USUARIOS_STORAGE = '@eventia/users';
@@ -172,6 +175,23 @@ export async function actualizarContrasenaUsuario(
     }
     if (!/[A-Za-z]/.test(contrasenaLimpia) || !/\d/.test(contrasenaLimpia)) {
       throw new Error('La nueva contraseña debe incluir al menos una letra y un número.');
+    }
+
+    // Con backend configurado, la contraseña real vive en la API (BCrypt).
+    if (isBackendConfigured) {
+      try {
+        await api.patch('/users/me/password', { newPassword: contrasenaLimpia });
+        return {
+          exito: true,
+          mensaje: '¡Contraseña actualizada con éxito!',
+        };
+      } catch (error: any) {
+        const mensaje =
+          error?.response?.data?.message ||
+          'No se pudo actualizar la contraseña. Verifica tu conexión con el servidor.';
+        console.error('[ProfileService] Error al actualizar contraseña en la API:', error);
+        return { exito: false, mensaje };
+      }
     }
 
     const usuariosCrudos = await AsyncStorage.getItem(CLAVE_USUARIOS_STORAGE);
