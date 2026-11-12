@@ -186,7 +186,7 @@ export default function CheckoutScreen() {
         <View style={styles.mainWrapper}>
           {/* 1. Temporizador de Reserva de Entradas */}
           <ReservationTimer
-            initialMinutes={10}
+            initialMinutes={15}
             onExpire={() => {
               Alert.alert(
                 'Tiempo expirado',

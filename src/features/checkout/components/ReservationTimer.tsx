@@ -9,10 +9,14 @@ interface ReservationTimerProps {
 }
 
 export const ReservationTimer: React.FC<ReservationTimerProps> = ({
-  initialMinutes = 10,
+  initialMinutes = 15,
   onExpire,
 }) => {
   const [secondsLeft, setSecondsLeft] = useState(initialMinutes * 60);
+
+  useEffect(() => {
+    setSecondsLeft(initialMinutes * 60);
+  }, [initialMinutes]);
 
   useEffect(() => {
     if (secondsLeft <= 0) {

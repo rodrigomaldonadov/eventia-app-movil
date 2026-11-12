@@ -1,20 +1,22 @@
-/**
- * Modelos de datos para el carrito de compras.
- * Define la estructura de items seleccionados, resumen de totales y la orden de compra.
- */
-
+// Estructura de cada entrada guardada en el carrito
 export interface CartItem {
-  id: string; // `${eventId}_${ticketId}`
+  id: string;
   eventId: string;
   eventTitle: string;
   eventDate: string;
   eventVenue: string;
+  eventLocation?: string;
   imageUrl?: string;
+  bannerUrl?: string | null;
+  ticketTypeId?: number;
   ticketId: string;
   ticketName: string;
+  zone?: string | null;
   price: number;
   quantity: number;
   available: number;
+  availableCapacity?: number;
+  maxPerPurchase?: number;
 }
 
 export interface CartSummary {
@@ -25,12 +27,20 @@ export interface CartSummary {
   total: number;
 }
 
-/**
- * Estructura de la orden para procesar la transacción y pasarela de pago.
- */
+export interface OrderRequestItemDto {
+  ticketTypeId: number;
+  quantity: number;
+}
+
+export interface OrderRequestDto {
+  paymentMethod: string;
+  items: OrderRequestItemDto[];
+}
+
 export interface CheckoutOrderPayload {
   orderId: string;
   items: CartItem[];
+  orderItems: OrderRequestItemDto[];
   subtotal: number;
   igv: number;
   total: number;
