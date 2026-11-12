@@ -22,14 +22,61 @@ export const EVENT_CATEGORIES: EventCategory[] = [
 ];
 
 /** Color de portada por categoría (placeholder hasta tener imágenes reales). */
-export const CATEGORY_COVER: Record<EventCategory, string> = {
+export const CATEGORY_COVER: Record<string, string> = {
   Música: '#4F46E5',
+  Conciertos: '#4F46E5',
   'Tech & Startups': '#0B1C30',
+  'Tecnología & Negocios': '#0B1C30',
   Festivales: '#9333EA',
   Gastronomía: '#006E4B',
   Teatro: '#B45309',
+  'Teatro & Artes': '#B45309',
   Networking: '#0369A1',
 };
+
+export function getCategoryCoverColor(category: string): string {
+  return CATEGORY_COVER[category] ?? '#4F46E5';
+}
+
+/**
+ * Coincidencia flexible de categorías para catálogo y filtros,
+ * soportando tildes, minúsculas y nombres equivalentes (p.ej. Música / Conciertos).
+ */
+export function matchCategory(eventCategory: string = '', filter: string = ''): boolean {
+  if (!filter || filter === 'Todos') return true;
+  if (!eventCategory) return false;
+
+  const normalize = (str: string) =>
+    str
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+  const normEvt = normalize(eventCategory);
+  const normFlt = normalize(filter);
+
+  if (normEvt === normFlt) return true;
+
+  const map: Record<string, string[]> = {
+    musica: ['musica', 'conciertos', 'concierto', 'music'],
+    conciertos: ['musica', 'conciertos', 'concierto', 'music'],
+    techstartups: ['techstartups', 'tecnologia', 'tecnologiaynegocios', 'tecnologianegocios', 'tech', 'software'],
+    tecnologiaynegocios: ['techstartups', 'tecnologia', 'tecnologiaynegocios', 'tecnologianegocios', 'tech'],
+    festivales: ['festivales', 'festival', 'openair'],
+    gastronomia: ['gastronomia', 'comida', 'culinario', 'maridaje'],
+    teatro: ['teatro', 'teatroyartes', 'teatroartes', 'artes', 'obra'],
+    teatroyartes: ['teatro', 'teatroyartes', 'teatroartes', 'artes', 'obra'],
+    networking: ['networking', 'negocios', 'emprendimiento', 'conferencias', 'founders'],
+  };
+
+  const aliases = map[normFlt];
+  if (aliases) {
+    return aliases.some(alias => normEvt.includes(alias) || alias.includes(normEvt));
+  }
+
+  return normEvt.includes(normFlt) || normFlt.includes(normEvt);
+}
 
 export const EVENTS: EventItem[] = [
   {

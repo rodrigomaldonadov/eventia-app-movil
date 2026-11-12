@@ -20,6 +20,7 @@ import { CATEGORY_COVER, formatPricePEN, getEventById as getMockEventById } from
 import { eventService } from '@/services/eventService';
 import type { EventItem, TicketType, ValidateTicketsPayload } from '@/types/event.types';
 import { useCart } from '@/hooks/use-cart';
+import { useAuth } from '@/hooks/use-auth';
 import { EventInfoSection } from '@/components/event/EventInfoSection';
 import { TicketCard } from '@/components/event/TicketCard';
 import { EventCheckoutBar } from '@/components/event/EventCheckoutBar';
@@ -31,19 +32,27 @@ export default function EventDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { addEventSelection, totalTickets: cartTotalTickets } = useCart();
+  const { isAdmin } = useAuth();
 
-  // Obtiene el evento inmediatamente de los datos locales
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
+
+  // Obtiene el evento inmediatamente de los datos locales o vía API
   const [event, setEvent] = useState<EventItem | null>(() => (id ? getMockEventById(id) ?? null : null));
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
-  // Si no está en datos locales y se configuró un backend, intenta cargarlo vía API
   useEffect(() => {
-    if (!event && id) {
+    if (id) {
       eventService.getEventById(id).then((data) => {
         if (data) setEvent(data);
       });
     }
-  }, [id, event]);
+  }, [id]);
 
   if (!event) {
     return (
@@ -58,7 +67,7 @@ export default function EventDetailScreen() {
             El evento solicitado no existe o ya no se encuentra disponible.
           </ThemedText>
           <Pressable
-            onPress={() => router.back()}
+            onPress={handleGoBack}
             style={[styles.backButton, { backgroundColor: eventia.primaryContainer }]}>
             <ThemedText type="smallBold" style={styles.backButtonText}>
               Volver al catálogo
@@ -69,8 +78,15 @@ export default function EventDetailScreen() {
     );
   }
 
-  // Aumenta la cantidad de una entrada validando su stock
+  // Aumenta la cantidad de una entrada validando su stock y rol
   const handleIncrement = (ticket: TicketType) => {
+    if (isAdmin) {
+      Alert.alert(
+        'Modo Administrador',
+        'Las cuentas de administración están restringidas para adquirir entradas. Inicia sesión con una cuenta de cliente para realizar compras.'
+      );
+      return;
+    }
     const current = quantities[ticket.id] ?? 0;
     if (current >= ticket.available) {
       Alert.alert('Límite de stock', `Solo quedan ${ticket.available} entradas disponibles.`);
@@ -101,6 +117,14 @@ export default function EventDetailScreen() {
 
   // Valida y prepara las entradas para transferir al carrito
   const handleContinue = async () => {
+    if (isAdmin) {
+      Alert.alert(
+        'Modo Administrador',
+        'Las cuentas de administración no pueden realizar compras.'
+      );
+      return;
+    }
+
     if (totalTickets === 0) {
       Alert.alert('Selecciona tus entradas', 'Debes seleccionar al menos una entrada para continuar.');
       return;
@@ -123,6 +147,9 @@ export default function EventDetailScreen() {
     // Agrega las entradas al carrito compartido directamente
     addEventSelection(event, quantities);
     setQuantities({});
+
+    // Redirige al carrito para continuar el flujo de compra
+    router.push('/cart' as never);
   };
 
   return (
@@ -135,7 +162,7 @@ export default function EventDetailScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Volver al catálogo"
-            onPress={() => router.back()}
+            onPress={handleGoBack}
             hitSlop={10}
             style={({ pressed }) => [styles.backIconCircle, pressed && styles.pressed]}>
             <Ionicons name="arrow-back" size={22} color={theme.text} />
@@ -145,21 +172,25 @@ export default function EventDetailScreen() {
             Detalle del Evento
           </ThemedText>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Ir al carrito de compras"
-            onPress={() => router.push('/cart' as never)}
-            hitSlop={10}
-            style={({ pressed }) => [styles.cartIconCircle, pressed && styles.pressed]}>
-            <Ionicons name="cart-outline" size={20} color={theme.text} />
-            {cartTotalTickets > 0 && (
-              <View style={styles.cartBadge}>
-                <ThemedText style={styles.cartBadgeText}>
-                  {cartTotalTickets > 99 ? '99+' : cartTotalTickets}
-                </ThemedText>
-              </View>
-            )}
-          </Pressable>
+          {!isAdmin ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Ir al carrito de compras"
+              onPress={() => router.push('/cart' as never)}
+              hitSlop={10}
+              style={({ pressed }) => [styles.cartIconCircle, pressed && styles.pressed]}>
+              <Ionicons name="cart-outline" size={20} color={theme.text} />
+              {cartTotalTickets > 0 && (
+                <View style={styles.cartBadge}>
+                  <ThemedText style={styles.cartBadgeText}>
+                    {cartTotalTickets > 99 ? '99+' : cartTotalTickets}
+                  </ThemedText>
+                </View>
+              )}
+            </Pressable>
+          ) : (
+            <View style={{ width: 36, height: 36 }} />
+          )}
         </View>
       </View>
 
@@ -218,16 +249,32 @@ export default function EventDetailScreen() {
       </ScrollView>
 
       {/* Barra Inferior Fija de Subtotales y Continuar */}
-      <EventCheckoutBar
-        totalTickets={totalTickets}
-        subtotal={subtotal}
-        onContinue={handleContinue}
-      />
+      {isAdmin ? (
+        <View style={[styles.adminBannerBar, { backgroundColor: theme.backgroundElement, borderTopColor: theme.backgroundSelected }]}>
+          <Ionicons name="shield-checkmark-outline" size={20} color="#6366F1" />
+          <ThemedText style={{ color: theme.textSecondary, fontSize: 13, fontWeight: '600', flex: 1, marginLeft: 8 }}>
+            Modo Administrador: Vista de solo lectura. Las compras de entradas están deshabilitadas.
+          </ThemedText>
+        </View>
+      ) : (
+        <EventCheckoutBar
+          totalTickets={totalTickets}
+          subtotal={subtotal}
+          onContinue={handleContinue}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  adminBannerBar: {
+    padding: Spacing.four,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
     flex: 1,
   },

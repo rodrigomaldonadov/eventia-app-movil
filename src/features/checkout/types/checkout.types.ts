@@ -8,7 +8,7 @@ export interface BuyerInfo {
   phone?: string;
 }
 
-export type PaymentMethodId = 'wallet' | 'card' | 'paypal';
+export type PaymentMethodId = 'card' | 'yape';
 
 export interface CardDetails {
   cardNumber: string;

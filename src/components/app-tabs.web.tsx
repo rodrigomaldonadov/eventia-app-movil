@@ -10,6 +10,7 @@ import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/hooks/use-auth';
 
 function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   const theme = useTheme();
@@ -34,6 +35,8 @@ function CustomTabList(props: ViewProps) {
 }
 
 export default function AppTabs() {
+  const { isAdmin } = useAuth();
+
   return (
     <Tabs style={styles.root}>
       <TabSlot style={styles.slot} />
@@ -42,15 +45,23 @@ export default function AppTabs() {
           <TabTrigger name="index" href="/" asChild>
             <TabButton>Explorar</TabButton>
           </TabTrigger>
-          <TabTrigger name="tickets" href="/tickets" asChild>
-            <TabButton>Mis Tickets</TabButton>
-          </TabTrigger>
-          <TabTrigger name="saved" href="/saved" asChild>
-            <TabButton>Guardados</TabButton>
-          </TabTrigger>
-          <TabTrigger name="profile" href="/profile" asChild>
-            <TabButton>Perfil</TabButton>
-          </TabTrigger>
+          {isAdmin ? (
+            <TabTrigger name="admin" href="/admin/dashboard" asChild>
+              <TabButton>Panel Administrador</TabButton>
+            </TabTrigger>
+          ) : (
+            <>
+              <TabTrigger name="tickets" href="/tickets" asChild>
+                <TabButton>Mis Tickets</TabButton>
+              </TabTrigger>
+              <TabTrigger name="saved" href="/saved" asChild>
+                <TabButton>Guardados</TabButton>
+              </TabTrigger>
+              <TabTrigger name="profile" href="/profile" asChild>
+                <TabButton>Perfil</TabButton>
+              </TabTrigger>
+            </>
+          )}
         </CustomTabList>
       </TabList>
     </Tabs>

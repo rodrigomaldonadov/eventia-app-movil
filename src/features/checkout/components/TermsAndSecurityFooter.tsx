@@ -36,14 +36,6 @@ export const TermsAndSecurityFooter: React.FC<TermsAndSecurityFooterProps> = ({
           veracidad de los datos suministrados.
         </Text>
       </TouchableOpacity>
-
-      {/* Sello de Seguridad SSL & PCI-DSS */}
-      <View style={styles.securitySeal}>
-        <Ionicons name="lock-closed" size={16} color="#006E4B" />
-        <Text style={styles.securityText}>
-          Encriptación SSL de 256 bits y certificación PCI-DSS Nivel 1
-        </Text>
-      </View>
     </View>
   );
 };

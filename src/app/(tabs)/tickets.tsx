@@ -12,6 +12,7 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/hooks/use-auth';
 import { EventiaHeader } from '@/components/eventia-header';
 import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
 
@@ -23,6 +24,7 @@ import type { Order, OrderTabType } from '@/features/orders/types/order.types';
 
 export default function TicketsScreen() {
   const theme = useTheme();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<OrderTabType>('upcoming');
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,13 +32,13 @@ export default function TicketsScreen() {
 
   const loadOrders = useCallback(async () => {
     try {
-      const data = await orderService.getOrders();
+      const data = await orderService.getOrders(user?.email);
       setOrders(data);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [user?.email]);
 
   useFocusEffect(
     useCallback(() => {

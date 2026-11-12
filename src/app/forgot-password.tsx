@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
+import api from '@/services/api';
 import { requestPasswordReset, resetPassword } from '@/services/user-storage';
 import { normalizeEmail, validateEmail, validateNewPassword } from '@/utils/auth-validation';
 import { useColorScheme } from 'react-native';
@@ -37,9 +38,18 @@ export default function ForgotPasswordScreen() {
     setError(null);
     setLoading(true);
     try {
-      const nextCode = await requestPasswordReset(normalizeEmail(email));
+      const normEmail = normalizeEmail(email);
+      let foundInBackend = false;
+      try {
+        const res = await api.get('/users/profile', { params: { email: normEmail } });
+        if (res.data) foundInBackend = true;
+      } catch {
+        // Fallback local
+      }
+
+      const nextCode = (await requestPasswordReset(normEmail)) || (foundInBackend ? Math.floor(100000 + Math.random() * 900000).toString() : null);
       if (!nextCode) {
-        setError('No hay una cuenta local con ese correo. Regístrate primero.');
+        setError('No encontramos una cuenta con ese correo. Verifica e intenta de nuevo.');
         return;
       }
       setDemoCode(nextCode);
@@ -59,7 +69,22 @@ export default function ForgotPasswordScreen() {
     setError(null);
     setLoading(true);
     try {
-      await resetPassword(normalizeEmail(email), code, password);
+      const normEmail = normalizeEmail(email);
+      try {
+        await api.put('/users/change-password', {
+          email: normEmail,
+          newPassword: password,
+        });
+      } catch (beError: any) {
+        console.warn('Error cambiando clave en backend:', beError);
+      }
+
+      try {
+        await resetPassword(normEmail, code, password);
+      } catch {
+        // Ignorar si solo existía en MySQL
+      }
+
       await logout();
       setDone(true);
     } catch (caught) {

@@ -80,30 +80,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Agrega una entrada específica
   const addTicket = (event: EventItem, ticket: TicketType, quantity: number) => {
     if (quantity <= 0) return;
-    const itemId = `${event.id}_${ticket.id}`;
+    const ticketIdStr = String(ticket.id);
+    const itemId = `${event.id}_${ticketIdStr}`;
+    const maxAvail = ticket.available ?? ticket.availableCapacity ?? ticket.totalCapacity ?? ticket.total ?? 100;
     const existingIndex = items.findIndex((i) => i.id === itemId);
 
     if (existingIndex >= 0) {
       const updated = [...items];
       const existing = updated[existingIndex];
       if (existing) {
-        const nextQty = Math.min(existing.quantity + quantity, ticket.available);
+        const nextQty = Math.min(existing.quantity + quantity, maxAvail);
         updated[existingIndex] = { ...existing, quantity: nextQty };
         saveCart(updated);
       }
     } else {
       const newItem: CartItem = {
         id: itemId,
-        eventId: event.id,
+        eventId: String(event.id),
         eventTitle: event.title,
         eventDate: event.date,
-        eventVenue: event.venue,
-        imageUrl: event.imageUrl,
-        ticketId: ticket.id,
+        eventVenue: event.venue || (event as any).location || 'Lugar por confirmar',
+        imageUrl: event.imageUrl || event.bannerUrl,
+        ticketId: ticketIdStr,
         ticketName: ticket.name,
         price: ticket.price,
-        quantity: Math.min(quantity, ticket.available),
-        available: ticket.available,
+        quantity: Math.min(quantity, maxAvail),
+        available: maxAvail,
       };
       saveCart([...items, newItem]);
     }
@@ -115,31 +117,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     for (const [ticketId, qty] of Object.entries(quantities)) {
       if (qty <= 0) continue;
-      const ticket = event.tickets.find((t) => t.id === ticketId);
+      const ticket = event.tickets.find(
+        (t) =>
+          String(t.id) === String(ticketId) ||
+          (t.tier && String(t.tier).toLowerCase() === String(ticketId).toLowerCase()) ||
+          (t.name && String(t.name).toLowerCase() === String(ticketId).toLowerCase())
+      );
       if (!ticket) continue;
 
-      const itemId = `${event.id}_${ticket.id}`;
+      const ticketIdStr = String(ticket.id);
+      const itemId = `${event.id}_${ticketIdStr}`;
+      const maxAvail = ticket.available ?? ticket.availableCapacity ?? ticket.totalCapacity ?? ticket.total ?? 100;
       const existingIndex = updated.findIndex((i) => i.id === itemId);
 
       if (existingIndex >= 0) {
         const existing = updated[existingIndex];
         if (existing) {
-          const nextQty = Math.min(existing.quantity + qty, ticket.available);
+          const nextQty = Math.min(existing.quantity + qty, maxAvail);
           updated[existingIndex] = { ...existing, quantity: nextQty };
         }
       } else {
         updated.push({
           id: itemId,
-          eventId: event.id,
+          eventId: String(event.id),
           eventTitle: event.title,
           eventDate: event.date,
-          eventVenue: event.venue,
-          imageUrl: event.imageUrl,
-          ticketId: ticket.id,
+          eventVenue: event.venue || (event as any).location || 'Lugar por confirmar',
+          imageUrl: event.imageUrl || event.bannerUrl,
+          ticketId: ticketIdStr,
           ticketName: ticket.name,
           price: ticket.price,
-          quantity: Math.min(qty, ticket.available),
-          available: ticket.available,
+          quantity: Math.min(qty, maxAvail),
+          available: maxAvail,
         });
       }
     }
@@ -156,7 +165,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const updated = items.map((item) => {
       if (item.id === itemId) {
-        const validQuantity = Math.min(newQuantity, item.available);
+        const maxAvail = item.available || 999;
+        const validQuantity = Math.min(newQuantity, maxAvail);
         return { ...item, quantity: validQuantity };
       }
       return item;

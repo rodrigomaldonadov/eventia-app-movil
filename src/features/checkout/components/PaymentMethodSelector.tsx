@@ -18,7 +18,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   const handleDisabledMethodPress = (methodName: string) => {
     Alert.alert(
       'Próximamente disponible',
-      `El método de pago con ${methodName} se habilitará en la siguiente actualización. Por favor selecciona Mercado Pago / Tarjetas para continuar tu compra.`,
+      `El método de pago con ${methodName} se habilitará en una próxima versión. Por favor selecciona Tarjetas de Crédito / Débito para continuar tu compra.`,
     );
   };
 
@@ -29,29 +29,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         <Text style={styles.sectionTitle}>Selecciona Método de Pago</Text>
       </View>
 
-      {/* 1. Apple Pay / Google Pay (Deshabilitado / Próximamente) */}
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => handleDisabledMethodPress('Apple Pay / Google Pay')}
-        style={[styles.methodCard, styles.methodCardDisabled]}>
-        <View style={styles.radioRow}>
-          <View style={styles.radioOuterDisabled} />
-          <View style={styles.methodInfo}>
-            <View style={styles.badgeLine}>
-              <Text style={styles.methodNameDisabled}>Apple Pay / Google Pay</Text>
-              <View style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>PRÓXIMAMENTE</Text>
-              </View>
-            </View>
-            <Text style={styles.methodDescDisabled}>
-              Autenticación biométrica de un solo toque
-            </Text>
-          </View>
-        </View>
-        <Ionicons name="phone-portrait-outline" size={20} color="#94A3B8" />
-      </TouchableOpacity>
-
-      {/* 2. Mercado Pago / Tarjetas de Crédito y Débito (Activo principal) */}
+      {/* 1. Tarjetas de Crédito y Débito (Activo principal) */}
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => onSelectMethod('card')}
@@ -93,26 +71,28 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         </View>
       </TouchableOpacity>
 
-      {/* 3. PayPal Express (Deshabilitado / Próximamente) */}
+      {/* 2. Yape (Deshabilitado / Próximamente) */}
       <TouchableOpacity
         activeOpacity={0.7}
-        onPress={() => handleDisabledMethodPress('PayPal Express')}
+        onPress={() => handleDisabledMethodPress('Yape')}
         style={[styles.methodCard, styles.methodCardDisabled]}>
         <View style={styles.radioRow}>
           <View style={styles.radioOuterDisabled} />
           <View style={styles.methodInfo}>
             <View style={styles.badgeLine}>
-              <Text style={styles.methodNameDisabled}>PayPal Express</Text>
+              <Text style={styles.methodNameDisabled}>Yape</Text>
               <View style={styles.comingSoonBadge}>
                 <Text style={styles.comingSoonText}>PRÓXIMAMENTE</Text>
               </View>
             </View>
             <Text style={styles.methodDescDisabled}>
-              Saldo PayPal y tarjetas internacionales
+              Pago móvil rápido con QR o número celular
             </Text>
           </View>
         </View>
-        <Ionicons name="logo-paypal" size={22} color="#94A3B8" />
+        <View style={styles.yapeBadge}>
+          <Text style={styles.yapeBadgeText}>YAPE</Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -240,6 +220,20 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#94A3B8',
     letterSpacing: 0.5,
+  },
+  yapeBadge: {
+    backgroundColor: '#742284',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#9333EA',
+  },
+  yapeBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#00D1A0',
+    letterSpacing: 0.8,
   },
   cardLogos: {
     flexDirection: 'row',

@@ -46,12 +46,12 @@ export default function ProfileScreen() {
 
   // Datos del perfil y preferencias
   const [datosPersonales, setDatosPersonales] = useState<DatosPersonalesCompletos>({
-    nombreCompleto: user?.fullName || 'Daniela Morales',
+    nombreCompleto: user?.fullName || 'Usuario Eventia',
     tipoDocumento: 'DNI',
-    numeroDocumento: '74829103',
-    telefono: '+51 987 654 321',
+    numeroDocumento: '',
+    telefono: user?.phoneNumber || '',
     fechaNacimiento: '14/08/1998',
-    correo: user?.email || 'daniela@eventia.io',
+    correo: user?.email || '',
   });
 
   const [preferencias, setPreferencias] = useState<PreferenciasPerfil>(
@@ -71,7 +71,7 @@ export default function ProfileScreen() {
       if (user?.email) {
         const datos = await obtenerDatosPersonalesUsuario(
           user.email,
-          user.fullName || 'Daniela Morales',
+          user.fullName || 'Usuario Eventia',
         );
         setDatosPersonales(datos);
 
@@ -101,7 +101,7 @@ export default function ProfileScreen() {
 
   // Actualización de datos
   const manejarActualizarCorreo = async (nuevoCorreo: string) => {
-    const correoActual = user?.email || 'daniela@eventia.io';
+    const correoActual = user?.email || '';
     const resultado = await actualizarCorreoUsuario(correoActual, nuevoCorreo);
 
     if (resultado.exito) {
@@ -113,7 +113,7 @@ export default function ProfileScreen() {
   };
 
   const manejarActualizarContrasena = async (nuevaContrasena: string) => {
-    const correoActual = user?.email || 'daniela@eventia.io';
+    const correoActual = user?.email || '';
     return await actualizarContrasenaUsuario(correoActual, nuevaContrasena);
   };
 
@@ -126,7 +126,7 @@ export default function ProfileScreen() {
 
   const manejarActualizarPreferencias = async (nuevasPreferencias: PreferenciasPerfil) => {
     setPreferencias(nuevasPreferencias);
-    const correoActual = user?.email || 'daniela@eventia.io';
+    const correoActual = user?.email || '';
     await guardarPreferenciasUsuario(correoActual, nuevasPreferencias);
   };
 

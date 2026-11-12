@@ -130,186 +130,203 @@ export default function AdminDashboardScreen() {
         {loading || !metrics ? (
           <ActivityIndicator size="small" color={Eventia.primary} style={{ marginTop: 24 }} />
         ) : (
-          <>
-            {/* Tarjeta de Ingresos Principales (KPI) */}
-            <View style={[styles.kpiHeroCard, { backgroundColor: Eventia.primaryContainer }]}>
-              <View style={styles.kpiHeroTop}>
-                <View>
-                  <Text style={styles.kpiHeroLabel}>INGRESOS TOTALES RECAUDADOS</Text>
-                  <Text style={styles.kpiHeroValue}>{formatPricePEN(metrics.totalRevenue)}</Text>
-                </View>
-                <View style={styles.kpiIconWrap}>
-                  <Ionicons name="cash" size={28} color="#FFFFFF" />
-                </View>
-              </View>
-              <View style={styles.kpiHeroDivider} />
-              <View style={styles.kpiHeroBottom}>
-                <View style={styles.kpiStatCol}>
-                  <Text style={styles.kpiStatNumber}>{metrics.totalTicketsSold}</Text>
-                  <Text style={styles.kpiStatLabel}>Tickets Vendidos</Text>
-                </View>
-                <View style={styles.kpiStatCol}>
-                  <Text style={styles.kpiStatNumber}>{metrics.stockMetrics.length}</Text>
-                  <Text style={styles.kpiStatLabel}>Eventos Activos</Text>
-                </View>
-              </View>
-            </View>
+          (() => {
+            const sales = metrics.salesByCategory ?? { general: 0, vip: 0, vipPlus: 0 };
+            const rev = metrics.revenueByCategory ?? { general: 0, vip: 0, vipPlus: 0 };
+            const popularEvents = metrics.popularEvents ?? [];
+            const stockMetrics = metrics.stockMetrics ?? [];
+            const totalRevenue = metrics.totalRevenue ?? 0;
+            const totalTicketsSold = metrics.totalTicketsSold ?? 0;
 
-            {/* Desglose de Ventas por Categoría (General, VIP, VIP+) */}
-            <View style={[styles.sectionCard, { backgroundColor: theme.backgroundElement }]}>
-              <View style={styles.sectionHeaderRow}>
-                <Ionicons name="pie-chart-outline" size={18} color={Eventia.primary} />
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  Ventas por Categoría de Entrada
-                </Text>
-              </View>
-
-              <View style={styles.categoryGrid}>
-                {/* Categoría General */}
-                <View style={[styles.categoryTile, { backgroundColor: theme.background }]}>
-                  <View style={styles.categoryBadgeRow}>
-                    <View style={[styles.badgeDot, { backgroundColor: '#3B82F6' }]} />
-                    <Text style={[styles.categoryName, { color: theme.text }]}>General</Text>
-                  </View>
-                  <Text style={[styles.categoryUnits, { color: theme.text }]}>
-                    {metrics.salesByCategory.general} <Text style={styles.unitText}>tickets</Text>
-                  </Text>
-                  <Text style={[styles.categoryRevenue, { color: theme.textSecondary }]}>
-                    {formatPricePEN(metrics.revenueByCategory.general)}
-                  </Text>
-                </View>
-
-                {/* Categoría VIP */}
-                <View style={[styles.categoryTile, { backgroundColor: theme.background }]}>
-                  <View style={styles.categoryBadgeRow}>
-                    <View style={[styles.badgeDot, { backgroundColor: '#F59E0B' }]} />
-                    <Text style={[styles.categoryName, { color: theme.text }]}>VIP</Text>
-                  </View>
-                  <Text style={[styles.categoryUnits, { color: theme.text }]}>
-                    {metrics.salesByCategory.vip} <Text style={styles.unitText}>tickets</Text>
-                  </Text>
-                  <Text style={[styles.categoryRevenue, { color: theme.textSecondary }]}>
-                    {formatPricePEN(metrics.revenueByCategory.vip)}
-                  </Text>
-                </View>
-
-                {/* Categoría VIP+ */}
-                <View style={[styles.categoryTile, { backgroundColor: theme.background }]}>
-                  <View style={styles.categoryBadgeRow}>
-                    <View style={[styles.badgeDot, { backgroundColor: '#8B5CF6' }]} />
-                    <Text style={[styles.categoryName, { color: theme.text }]}>VIP+</Text>
-                  </View>
-                  <Text style={[styles.categoryUnits, { color: theme.text }]}>
-                    {metrics.salesByCategory.vipPlus} <Text style={styles.unitText}>tickets</Text>
-                  </Text>
-                  <Text style={[styles.categoryRevenue, { color: theme.textSecondary }]}>
-                    {formatPricePEN(metrics.revenueByCategory.vipPlus)}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Eventos Más Populares / Mayor Recaudación */}
-            <View style={[styles.sectionCard, { backgroundColor: theme.backgroundElement }]}>
-              <View style={styles.sectionHeaderRow}>
-                <Ionicons name="trophy-outline" size={18} color="#F59E0B" />
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  Eventos Más Populares
-                </Text>
-              </View>
-
-              {metrics.popularEvents.length === 0 ? (
-                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                  Aún no hay compras registradas en los eventos.
-                </Text>
-              ) : (
-                metrics.popularEvents.map((evt, idx) => (
-                  <View key={evt.id} style={[styles.popularRow, idx > 0 && styles.rowDivider]}>
-                    <View style={styles.rankBadge}>
-                      <Text style={styles.rankText}>#{idx + 1}</Text>
+            return (
+              <>
+                {/* Tarjeta de Ingresos Principales (KPI) */}
+                <View style={[styles.kpiHeroCard, { backgroundColor: Eventia.primaryContainer }]}>
+                  <View style={styles.kpiHeroTop}>
+                    <View>
+                      <Text style={styles.kpiHeroLabel}>INGRESOS TOTALES RECAUDADOS</Text>
+                      <Text style={styles.kpiHeroValue}>{formatPricePEN(totalRevenue)}</Text>
                     </View>
-                    {evt.imageUrl ? (
-                      <Image source={{ uri: evt.imageUrl }} style={styles.popularThumb} />
-                    ) : null}
-                    <View style={styles.popularInfo}>
-                      <Text style={[styles.popularTitle, { color: theme.text }]} numberOfLines={1}>
-                        {evt.title}
-                      </Text>
-                      <Text style={[styles.popularSold, { color: theme.textSecondary }]}>
-                        {evt.ticketsSold} entradas vendidas
-                      </Text>
+                    <View style={styles.kpiIconWrap}>
+                      <Ionicons name="cash" size={28} color="#FFFFFF" />
                     </View>
-                    <Text style={[styles.popularMoney, { color: '#10B981' }]}>
-                      {formatPricePEN(evt.revenue)}
+                  </View>
+                  <View style={styles.kpiHeroDivider} />
+                  <View style={styles.kpiHeroBottom}>
+                    <View style={styles.kpiStatCol}>
+                      <Text style={styles.kpiStatNumber}>{totalTicketsSold}</Text>
+                      <Text style={styles.kpiStatLabel}>Tickets Vendidos</Text>
+                    </View>
+                    <View style={styles.kpiStatCol}>
+                      <Text style={styles.kpiStatNumber}>{stockMetrics.length}</Text>
+                      <Text style={styles.kpiStatLabel}>Eventos Activos</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Desglose de Ventas por Categoría (General, VIP, VIP+) */}
+                <View style={[styles.sectionCard, { backgroundColor: theme.backgroundElement }]}>
+                  <View style={styles.sectionHeaderRow}>
+                    <Ionicons name="pie-chart-outline" size={18} color={Eventia.primary} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                      Ventas por Categoría de Entrada
                     </Text>
                   </View>
-                ))
-              )}
-            </View>
 
-            {/* Monitoreo de Stock Restante por Evento */}
-            <View style={[styles.sectionCard, { backgroundColor: theme.backgroundElement }]}>
-              <View style={styles.sectionHeaderRow}>
-                <Ionicons name="cube-outline" size={18} color={Eventia.primary} />
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  Estado de Stock Restante
-                </Text>
-              </View>
-
-              {metrics.stockMetrics.map((sm, index) => {
-                const isLow = sm.currentAvailableStock <= 10;
-                return (
-                  <View key={sm.id} style={[styles.stockCard, index > 0 && styles.rowDivider]}>
-                    <View style={styles.stockHeader}>
-                      <Text style={[styles.stockTitle, { color: theme.text }]} numberOfLines={1}>
-                        {sm.title}
-                      </Text>
-                      <View
-                        style={[
-                          styles.stockBadge,
-                          {
-                            backgroundColor:
-                              sm.currentAvailableStock === 0
-                                ? '#EF4444'
-                                : isLow
-                                  ? '#F59E0B'
-                                  : '#10B981',
-                          },
-                        ]}>
-                        <Text style={styles.stockBadgeText}>
-                          {sm.currentAvailableStock === 0
-                            ? 'Agotado'
-                            : `${sm.currentAvailableStock} disp.`}
-                        </Text>
+                  <View style={styles.categoryGrid}>
+                    {/* Categoría General */}
+                    <View style={[styles.categoryTile, { backgroundColor: theme.background }]}>
+                      <View style={styles.categoryBadgeRow}>
+                        <View style={[styles.badgeDot, { backgroundColor: '#3B82F6' }]} />
+                        <Text style={[styles.categoryName, { color: theme.text }]}>General</Text>
                       </View>
-                    </View>
-
-                    {/* Barra de Progreso de Ventas */}
-                    <View style={[styles.progressBarTrack, { backgroundColor: theme.background }]}>
-                      <View
-                        style={[
-                          styles.progressBarFill,
-                          {
-                            width: `${Math.min(100, Math.max(0, sm.percentSold))}%`,
-                            backgroundColor: sm.percentSold > 80 ? '#EF4444' : Eventia.primary,
-                          },
-                        ]}
-                      />
-                    </View>
-
-                    <View style={styles.stockFooter}>
-                      <Text style={[styles.stockFootText, { color: theme.textSecondary }]}>
-                        Vendidas: {sm.ticketsSold} / {sm.totalInitialStock}
+                      <Text style={[styles.categoryUnits, { color: theme.text }]}>
+                        {sales.general ?? 0} <Text style={styles.unitText}>tickets</Text>
                       </Text>
-                      <Text style={[styles.stockFootText, { color: theme.textSecondary }]}>
-                        {sm.percentSold}% Ocupación
+                      <Text style={[styles.categoryRevenue, { color: theme.textSecondary }]}>
+                        {formatPricePEN(rev.general ?? 0)}
+                      </Text>
+                    </View>
+
+                    {/* Categoría VIP */}
+                    <View style={[styles.categoryTile, { backgroundColor: theme.background }]}>
+                      <View style={styles.categoryBadgeRow}>
+                        <View style={[styles.badgeDot, { backgroundColor: '#F59E0B' }]} />
+                        <Text style={[styles.categoryName, { color: theme.text }]}>VIP</Text>
+                      </View>
+                      <Text style={[styles.categoryUnits, { color: theme.text }]}>
+                        {sales.vip ?? 0} <Text style={styles.unitText}>tickets</Text>
+                      </Text>
+                      <Text style={[styles.categoryRevenue, { color: theme.textSecondary }]}>
+                        {formatPricePEN(rev.vip ?? 0)}
+                      </Text>
+                    </View>
+
+                    {/* Categoría VIP+ */}
+                    <View style={[styles.categoryTile, { backgroundColor: theme.background }]}>
+                      <View style={styles.categoryBadgeRow}>
+                        <View style={[styles.badgeDot, { backgroundColor: '#8B5CF6' }]} />
+                        <Text style={[styles.categoryName, { color: theme.text }]}>VIP+</Text>
+                      </View>
+                      <Text style={[styles.categoryUnits, { color: theme.text }]}>
+                        {sales.vipPlus ?? 0} <Text style={styles.unitText}>tickets</Text>
+                      </Text>
+                      <Text style={[styles.categoryRevenue, { color: theme.textSecondary }]}>
+                        {formatPricePEN(rev.vipPlus ?? 0)}
                       </Text>
                     </View>
                   </View>
-                );
-              })}
-            </View>
-          </>
+                </View>
+
+                {/* Eventos Más Populares / Mayor Recaudación */}
+                <View style={[styles.sectionCard, { backgroundColor: theme.backgroundElement }]}>
+                  <View style={styles.sectionHeaderRow}>
+                    <Ionicons name="trophy-outline" size={18} color="#F59E0B" />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                      Eventos Más Populares
+                    </Text>
+                  </View>
+
+                  {popularEvents.length === 0 ? (
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                      Aún no hay compras registradas en los eventos.
+                    </Text>
+                  ) : (
+                    popularEvents.map((evt, idx) => (
+                      <View key={evt.id} style={[styles.popularRow, idx > 0 && styles.rowDivider]}>
+                        <View style={styles.rankBadge}>
+                          <Text style={styles.rankText}>#{idx + 1}</Text>
+                        </View>
+                        {evt.imageUrl ? (
+                          <Image source={{ uri: evt.imageUrl }} style={styles.popularThumb} />
+                        ) : null}
+                        <View style={styles.popularInfo}>
+                          <Text style={[styles.popularTitle, { color: theme.text }]} numberOfLines={1}>
+                            {evt.title}
+                          </Text>
+                          <Text style={[styles.popularSold, { color: theme.textSecondary }]}>
+                            {evt.ticketsSold} entradas vendidas
+                          </Text>
+                        </View>
+                        <Text style={[styles.popularMoney, { color: '#10B981' }]}>
+                          {formatPricePEN(evt.revenue)}
+                        </Text>
+                      </View>
+                    ))
+                  )}
+                </View>
+
+                {/* Monitoreo de Stock Restante por Evento */}
+                <View style={[styles.sectionCard, { backgroundColor: theme.backgroundElement }]}>
+                  <View style={styles.sectionHeaderRow}>
+                    <Ionicons name="cube-outline" size={18} color={Eventia.primary} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                      Estado de Stock Restante
+                    </Text>
+                  </View>
+
+                  {stockMetrics.length === 0 ? (
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                      No hay eventos creados para monitorear stock.
+                    </Text>
+                  ) : (
+                    stockMetrics.map((sm, index) => {
+                      const isLow = sm.currentAvailableStock <= 10;
+                      return (
+                        <View key={sm.id} style={[styles.stockCard, index > 0 && styles.rowDivider]}>
+                          <View style={styles.stockHeader}>
+                            <Text style={[styles.stockTitle, { color: theme.text }]} numberOfLines={1}>
+                              {sm.title}
+                            </Text>
+                            <View
+                              style={[
+                                styles.stockBadge,
+                                {
+                                  backgroundColor:
+                                    sm.currentAvailableStock === 0
+                                      ? '#EF4444'
+                                      : isLow
+                                        ? '#F59E0B'
+                                        : '#10B981',
+                                },
+                              ]}>
+                              <Text style={styles.stockBadgeText}>
+                                {sm.currentAvailableStock === 0
+                                  ? 'Agotado'
+                                  : `${sm.currentAvailableStock} disp.`}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Barra de Progreso de Ventas */}
+                          <View style={[styles.progressBarTrack, { backgroundColor: theme.background }]}>
+                            <View
+                              style={[
+                                styles.progressBarFill,
+                                {
+                                  width: `${Math.min(100, Math.max(0, sm.percentSold))}%`,
+                                  backgroundColor: sm.percentSold > 80 ? '#EF4444' : Eventia.primary,
+                                },
+                              ]}
+                            />
+                          </View>
+
+                          <View style={styles.stockFooter}>
+                            <Text style={[styles.stockFootText, { color: theme.textSecondary }]}>
+                              Vendidas: {sm.ticketsSold} / {sm.totalInitialStock}
+                            </Text>
+                            <Text style={[styles.stockFootText, { color: theme.textSecondary }]}>
+                              {sm.percentSold}% Ocupación
+                            </Text>
+                          </View>
+                        </View>
+                      );
+                    })
+                  )}
+                </View>
+              </>
+            );
+          })()
         )}
       </ScrollView>
     </SafeAreaView>

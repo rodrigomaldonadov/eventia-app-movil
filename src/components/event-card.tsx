@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { useAuth } from '@/hooks/use-auth';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Eventia, Spacing } from '@/constants/theme';
@@ -41,6 +42,8 @@ export function EventCard({ event }: EventCardProps) {
   const theme = useTheme();
   const eventia = useEventiaTheme();
   const router = useRouter();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
 
   const badge = getDateBadge(event.date);
   const availability = getAvailability(event);
@@ -182,11 +185,11 @@ export function EventCard({ event }: EventCardProps) {
         ) : (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Comprar entradas para ${event.title}`}
+            accessibilityLabel={`${isAdmin ? 'Ver evento' : 'Comprar entradas para'} ${event.title}`}
             onPress={goToDetail}
             style={({ pressed }) => [
               styles.buyButton,
-              { backgroundColor: eventia.primaryContainer },
+              { backgroundColor: isAdmin ? '#4F46E5' : eventia.primaryContainer },
               pressed && styles.pressed,
             ]}
           >
@@ -194,7 +197,7 @@ export function EventCard({ event }: EventCardProps) {
               type="smallBold"
               style={styles.buyLabel}
             >
-              Comprar
+              {isAdmin ? 'Ver Evento' : 'Comprar'}
             </ThemedText>
           </Pressable>
         )}

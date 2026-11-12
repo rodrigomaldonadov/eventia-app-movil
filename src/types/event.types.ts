@@ -19,6 +19,10 @@ export interface TicketType {
   tier?: TicketTier;
   price: number;
   available: number;
+  total?: number;
+  totalCapacity?: number;
+  availableCapacity?: number;
+  sold?: number;
   description?: string;
 }
 
@@ -35,7 +39,12 @@ export interface EventItem {
   organizer: string;
   featured: boolean;
   imageUrl?: string;
+  bannerUrl?: string;
   edition?: string;
+  capacity?: number;
+  hasSoldTickets?: boolean;
+  soldTicketsCount?: number;
+  totalRevenue?: number;
   tickets: TicketType[];
 }
 

@@ -95,13 +95,15 @@ export const eventService = {
           `/events/${payload.eventId}/validate-tickets`,
           payload,
         );
-        return response.data;
-      } catch {
-        // Continúa con la validación local si el backend no responde
+        if (response.data) {
+          return response.data;
+        }
+      } catch (err) {
+        console.warn('[validateTickets] Error validando en backend, probando con datos locales/cacheados:', err);
       }
     }
 
-    const event = await eventStorage.getEventById(payload.eventId);
+    const event = (await this.getEventById(payload.eventId)) ?? (await eventStorage.getEventById(payload.eventId));
     if (!event) {
       return {
         valid: false,
@@ -139,12 +141,107 @@ export const eventService = {
     };
   },
 
-  // Funciones CRUD para Administrador
-  createEvent: eventStorage.createEvent.bind(eventStorage),
-  updateEvent: eventStorage.updateEvent.bind(eventStorage),
-  deleteEvent: eventStorage.deleteEvent.bind(eventStorage),
+  // Funciones CRUD para Administrador conectadas a MySQL / Spring Boot
+  async createEvent(eventData: Omit<EventItem, 'id'>): Promise<EventItem> {
+    if (isBackendConfigured) {
+      try {
+        const mappedTickets = eventData.tickets?.map((t) => ({
+          name: t.name,
+          price: Number(t.price) || 0,
+          available: Number(t.available) || 0,
+          totalCapacity: Number(t.available) || 0,
+          availableCapacity: Number(t.available) || 0,
+          zone: t.name,
+        }));
+        const payload = {
+          title: eventData.title,
+          description: eventData.description,
+          date: eventData.date,
+          time: eventData.time,
+          venue: eventData.venue,
+          location: eventData.venue,
+          category: eventData.category,
+          categoryName: eventData.category,
+          imageUrl: eventData.imageUrl,
+          bannerUrl: eventData.imageUrl,
+          tickets: mappedTickets,
+          ticketTypes: mappedTickets,
+        };
+        const response = await api.post<EventItem>('/events', payload);
+        try {
+          await eventStorage.createEvent(eventData);
+        } catch {}
+        return response.data;
+      } catch (e) {
+        console.warn('[eventService.createEvent] Error enviando al backend, usando local fallback:', e);
+      }
+    }
+    return eventStorage.createEvent(eventData);
+  },
+
+  async updateEvent(id: string, updates: Partial<EventItem>): Promise<EventItem> {
+    if (isBackendConfigured) {
+      try {
+        const mappedTickets = updates.tickets?.map((t) => ({
+          name: t.name,
+          price: Number(t.price) || 0,
+          available: Number(t.available) || 0,
+          totalCapacity: Number(t.available) || 0,
+          availableCapacity: Number(t.available) || 0,
+          zone: t.name,
+        }));
+        const payload = {
+          title: updates.title,
+          description: updates.description,
+          date: updates.date,
+          time: updates.time,
+          venue: updates.venue,
+          location: updates.venue,
+          category: updates.category,
+          categoryName: updates.category,
+          imageUrl: updates.imageUrl,
+          bannerUrl: updates.imageUrl,
+          tickets: mappedTickets,
+          ticketTypes: mappedTickets,
+        };
+        const response = await api.put<EventItem>(`/events/${id}`, payload);
+        try {
+          await eventStorage.updateEvent(id, updates);
+        } catch {}
+        return response.data;
+      } catch (e) {
+        console.warn('[eventService.updateEvent] Error enviando al backend, usando local fallback:', e);
+      }
+    }
+    return eventStorage.updateEvent(id, updates);
+  },
+
+  async deleteEvent(id: string): Promise<boolean> {
+    if (isBackendConfigured) {
+      try {
+        await api.delete(`/events/${id}`);
+      } catch (e) {
+        console.warn('[eventService.deleteEvent] Error en backend, eliminando local:', e);
+      }
+    }
+    return eventStorage.deleteEvent(id);
+  },
+
   decrementBatchStock: eventStorage.decrementBatchStock.bind(eventStorage),
-  getDashboardMetrics: eventStorage.getDashboardMetrics.bind(eventStorage),
+
+  async getDashboardMetrics(): Promise<any> {
+    if (isBackendConfigured) {
+      try {
+        const response = await api.get('/admin/dashboard');
+        if (response.data) {
+          return response.data;
+        }
+      } catch (e) {
+        console.warn('[eventService.getDashboardMetrics] Error obteniendo de backend, usando local:', e);
+      }
+    }
+    return eventStorage.getDashboardMetrics();
+  },
 };
 
 export default eventService;

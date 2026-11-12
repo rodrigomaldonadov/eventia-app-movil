@@ -17,12 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
-import {
-  getAllUsers,
-  toggleUserStatus,
-  updateUserRole,
-  type StoredUserPublic,
-} from '@/services/user-storage';
+import { userService, type AdminUserItem } from '@/services/userService';
 import { formatShortDate } from '@/data/events';
 
 export default function AdminUsersScreen() {
@@ -30,14 +25,14 @@ export default function AdminUsersScreen() {
   const theme = useTheme();
   const { user: currentAdmin, isAdmin, isLoading: authLoading } = useAuth();
 
-  const [users, setUsers] = useState<StoredUserPublic[]>([]);
+  const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
 
   const loadUsers = useCallback(async () => {
     try {
-      const data = await getAllUsers();
+      const data = await userService.getUsers();
       setUsers(data);
     } catch (e) {
       console.error('[AdminUsers Error]:', e);
@@ -58,46 +53,25 @@ export default function AdminUsersScreen() {
     loadUsers();
   };
 
-  const handleToggleRole = (u: StoredUserPublic) => {
-    if (u.id === currentAdmin?.id) {
-      Alert.alert('Acción no permitida', 'No puedes cambiar tu propio rol de administrador.');
-      return;
-    }
+  const handleToggleStatus = (u: AdminUserItem) => {
+    const isCurrentUser =
+      String(u.id) === String(currentAdmin?.id) ||
+      u.email.toLowerCase() === currentAdmin?.email?.toLowerCase();
 
-    const nextRole = u.role === 'ADMIN' ? 'CLIENT' : 'ADMIN';
-    Alert.alert(
-      'Cambiar Rol de Usuario',
-      `¿Deseas cambiar el rol de ${u.firstName} ${u.lastName} a ${nextRole}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            try {
-              const updated = await updateUserRole(u.id, nextRole);
-              setUsers((prev) => prev.map((item) => (item.id === u.id ? updated : item)));
-              Alert.alert('Rol Actualizado', `El usuario ahora tiene rol ${nextRole}.`);
-            } catch {
-              Alert.alert('Error', 'No se pudo cambiar el rol.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleToggleStatus = (u: StoredUserPublic) => {
-    if (u.id === currentAdmin?.id) {
-      Alert.alert('Acción no permitida', 'No puedes desactivar tu propia cuenta activa.');
+    if (isCurrentUser) {
+      Alert.alert(
+        'Acción no permitida',
+        'No puedes inactivar tu propia cuenta de administrador en sesión activa.'
+      );
       return;
     }
 
     const isCurrentlyActive = u.status === 'ACTIVE';
-    const nextStatus = isCurrentlyActive ? 'INACTIVE' : 'ACTIVE';
-    const actionLabel = isCurrentlyActive ? 'Desactivar Cuenta' : 'Restaurar Cuenta';
+    const nextActive = !isCurrentlyActive;
+    const actionLabel = isCurrentlyActive ? 'Inactivar Usuario' : 'Activar Usuario';
     const actionDesc = isCurrentlyActive
-      ? `¿Deseas desactivar la cuenta de ${u.firstName} ${u.lastName}? El usuario no podrá iniciar sesión hasta que sea restaurado.`
-      : `¿Deseas restaurar la cuenta de ${u.firstName} ${u.lastName}? Volverá a tener acceso normal a la app.`;
+      ? `¿Deseas inactivar la cuenta de ${u.firstName} ${u.lastName}? El usuario no podrá iniciar sesión en la aplicación.`
+      : `¿Deseas reactivar la cuenta de ${u.firstName} ${u.lastName}? El usuario podrá volver a ingresar al sistema normalmente.`;
 
     Alert.alert(actionLabel, actionDesc, [
       { text: 'Cancelar', style: 'cancel' },
@@ -106,16 +80,22 @@ export default function AdminUsersScreen() {
         style: isCurrentlyActive ? 'destructive' : 'default',
         onPress: async () => {
           try {
-            const updated = await toggleUserStatus(u.id, nextStatus);
-            setUsers((prev) => prev.map((item) => (item.id === u.id ? updated : item)));
+            const updated = await userService.updateUserStatus(u.id, nextActive);
+            setUsers((prev) =>
+              prev.map((item) =>
+                String(item.id) === String(u.id)
+                  ? { ...item, status: updated.status }
+                  : item
+              )
+            );
             Alert.alert(
               'Estado Actualizado',
-              isCurrentlyActive
-                ? 'La cuenta ha sido desactivada correctamente.'
-                : 'La cuenta ha sido restaurada con éxito.'
+              nextActive
+                ? 'La cuenta ha sido reactivada con éxito en la base de datos.'
+                : 'La cuenta ha sido inactivada correctamente en la base de datos.'
             );
           } catch {
-            Alert.alert('Error', 'No se pudo actualizar el estado de la cuenta.');
+            Alert.alert('Error', 'No se pudo actualizar el estado de la cuenta en el servidor.');
           }
         },
       },
@@ -124,13 +104,16 @@ export default function AdminUsersScreen() {
 
   const filteredUsers = users.filter((u) => {
     const q = search.trim().toLowerCase();
-    const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+    if (!q) return true;
+    const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+    const email = (u.email || '').toLowerCase();
+    const doc = u.documentNumber || '';
+    const role = (u.role || '').toLowerCase();
     return (
-      q.length === 0 ||
       fullName.includes(q) ||
-      u.email.toLowerCase().includes(q) ||
-      u.documentNumber.includes(q) ||
-      u.role.toLowerCase().includes(q)
+      email.includes(q) ||
+      doc.includes(q) ||
+      role.includes(q)
     );
   });
 
@@ -193,7 +176,7 @@ export default function AdminUsersScreen() {
         ) : (
           <FlatList
             data={filteredUsers}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => String(item.id)}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
@@ -203,12 +186,19 @@ export default function AdminUsersScreen() {
               <View style={styles.emptyBox}>
                 <Ionicons name="people-outline" size={48} color={theme.textSecondary} />
                 <Text style={[styles.emptyTitle, { color: theme.text }]}>No se encontraron usuarios</Text>
+                <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                  Intenta cambiar el término de búsqueda.
+                </Text>
               </View>
             }
             renderItem={({ item }) => {
-              const isCurrentUser = item.id === currentAdmin?.id;
+              const isCurrentUser =
+                String(item.id) === String(currentAdmin?.id) ||
+                item.email.toLowerCase() === currentAdmin?.email?.toLowerCase();
               const isActive = item.status === 'ACTIVE';
               const isUserAdmin = item.role === 'ADMIN';
+
+              const initials = `${(item.firstName?.[0] || 'U').toUpperCase()}${(item.lastName?.[0] || '').toUpperCase()}`;
 
               return (
                 <View
@@ -219,11 +209,18 @@ export default function AdminUsersScreen() {
                   ]}>
                   {/* Encabezado del usuario */}
                   <View style={styles.userTopRow}>
-                    <View style={styles.avatarCircle}>
-                      <Text style={styles.avatarInitials}>
-                        {item.firstName[0]}
-                        {item.lastName[0]}
-                      </Text>
+                    <View
+                      style={[
+                        styles.avatarCircle,
+                        {
+                          backgroundColor: isUserAdmin
+                            ? Eventia.primary
+                            : isActive
+                              ? '#3B82F6'
+                              : '#6B7280',
+                        },
+                      ]}>
+                      <Text style={styles.avatarInitials}>{initials}</Text>
                     </View>
 
                     <View style={styles.userInfo}>
@@ -249,7 +246,7 @@ export default function AdminUsersScreen() {
                           styles.roleBadge,
                           {
                             backgroundColor: isUserAdmin
-                              ? 'rgba(79, 70, 229, 0.15)'
+                              ? 'rgba(99, 102, 241, 0.15)'
                               : 'rgba(59, 130, 246, 0.1)',
                           },
                         ]}>
@@ -286,10 +283,10 @@ export default function AdminUsersScreen() {
                   <View style={[styles.detailsRow, { backgroundColor: theme.background }]}>
                     <View style={styles.detailItem}>
                       <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                        {item.documentType}
+                        {item.documentType || 'DNI'}
                       </Text>
                       <Text style={[styles.detailValue, { color: theme.text }]}>
-                        {item.documentNumber}
+                        {item.documentNumber || 'N/D'}
                       </Text>
                     </View>
 
@@ -311,43 +308,56 @@ export default function AdminUsersScreen() {
                         Registro
                       </Text>
                       <Text style={[styles.detailValue, { color: theme.text }]}>
-                        {item.createdAt ? formatShortDate(item.createdAt.slice(0, 10)) : 'N/D'}
+                        {item.createdAt ? formatShortDate(String(item.createdAt).slice(0, 10)) : 'Reciente'}
                       </Text>
                     </View>
                   </View>
 
-                  {/* Botones de Gestión (Cambio de Rol y Desactivación / Restauración) */}
+                  {/* Botón único de Acción: Inactivar o Activar */}
                   <View style={styles.actionsRow}>
                     <TouchableOpacity
-                      style={[styles.actionBtn, { backgroundColor: 'rgba(79, 70, 229, 0.1)' }]}
-                      onPress={() => handleToggleRole(item)}>
-                      <Ionicons name="shield-outline" size={15} color={Eventia.primary} />
-                      <Text style={[styles.actionBtnText, { color: Eventia.primary }]}>
-                        {isUserAdmin ? 'Cambiar a CLIENT' : 'Hacer ADMIN'}
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
                       style={[
-                        styles.actionBtn,
+                        styles.statusActionBtn,
                         {
                           backgroundColor: isActive
-                            ? 'rgba(239, 68, 68, 0.1)'
-                            : 'rgba(16, 185, 129, 0.1)',
+                            ? 'rgba(239, 68, 68, 0.12)'
+                            : 'rgba(16, 185, 129, 0.12)',
+                          borderColor: isActive
+                            ? 'rgba(239, 68, 68, 0.35)'
+                            : 'rgba(16, 185, 129, 0.35)',
                         },
+                        isCurrentUser && { opacity: 0.4 },
                       ]}
+                      disabled={isCurrentUser}
+                      activeOpacity={0.8}
                       onPress={() => handleToggleStatus(item)}>
                       <Ionicons
-                        name={isActive ? 'power-outline' : 'refresh-outline'}
-                        size={15}
-                        color={isActive ? '#EF4444' : '#10B981'}
+                        name={
+                          isCurrentUser
+                            ? 'shield-checkmark'
+                            : isActive
+                              ? 'ban-outline'
+                              : 'checkmark-circle-outline'
+                        }
+                        size={16}
+                        color={isCurrentUser ? theme.textSecondary : isActive ? '#EF4444' : '#10B981'}
                       />
                       <Text
                         style={[
-                          styles.actionBtnText,
-                          { color: isActive ? '#EF4444' : '#10B981' },
+                          styles.statusActionBtnText,
+                          {
+                            color: isCurrentUser
+                              ? theme.textSecondary
+                              : isActive
+                                ? '#EF4444'
+                                : '#10B981',
+                          },
                         ]}>
-                        {isActive ? 'Inactivar' : 'Restaurar Cuenta'}
+                        {isCurrentUser
+                          ? 'Tu Sesión Actual (Protegida)'
+                          : isActive
+                            ? 'Inactivar Usuario'
+                            : 'Activar Usuario'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -379,70 +389,80 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    paddingHorizontal: 12,
     height: 42,
     borderRadius: 12,
-    paddingHorizontal: 12,
-  },
-  searchInput: { flex: 1, fontSize: 13, paddingVertical: 0 },
-  listContent: { paddingBottom: 32, gap: 14 },
-  userCard: {
-    padding: 14,
-    borderRadius: 18,
+    gap: 8,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
-    gap: 12,
   },
-  inactiveCard: { opacity: 0.8, borderColor: 'rgba(239, 68, 68, 0.3)' },
-  userTopRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  searchInput: { flex: 1, fontSize: 13, height: '100%' },
+  listContent: { gap: 12, paddingBottom: 32 },
+  emptyBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 8 },
+  emptyTitle: { fontSize: 16, fontWeight: '700' },
+  emptySubtitle: { fontSize: 12 },
+  userCard: {
+    padding: 14,
+    borderRadius: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  inactiveCard: {
+    opacity: 0.75,
+    borderStyle: 'dashed',
+  },
+  userTopRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatarCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Eventia.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarInitials: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
-  userInfo: { flex: 1 },
+  avatarInitials: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  userInfo: { flex: 1, gap: 2 },
   userNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  userName: { fontSize: 15, fontWeight: '800' },
+  userName: { fontSize: 14, fontWeight: '800' },
   youBadge: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
     paddingHorizontal: 6,
     paddingVertical: 1,
-    borderRadius: 4,
+    borderRadius: 6,
+    backgroundColor: 'rgba(99,102,241,0.2)',
   },
-  youBadgeText: { fontSize: 10, fontWeight: '700', color: '#10B981' },
-  userEmail: { fontSize: 12, marginTop: 1 },
+  youBadgeText: { color: Eventia.primary, fontSize: 10, fontWeight: '800' },
+  userEmail: { fontSize: 12 },
   badgesCol: { alignItems: 'flex-end', gap: 4 },
-  roleBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  roleBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   roleBadgeText: { fontSize: 10, fontWeight: '800' },
-  statusBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   statusBadgeText: { fontSize: 9, fontWeight: '800' },
   detailsRow: {
     flexDirection: 'row',
-    padding: 10,
-    borderRadius: 12,
-    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
   },
-  detailItem: { flex: 1, alignItems: 'center' },
-  detailDivider: { width: 1, height: 22, backgroundColor: 'rgba(255,255,255,0.08)' },
+  detailItem: { flex: 1, alignItems: 'center', gap: 2 },
   detailLabel: { fontSize: 10, fontWeight: '600' },
-  detailValue: { fontSize: 12, fontWeight: '700', marginTop: 1 },
-  actionsRow: { flexDirection: 'row', gap: 10 },
-  actionBtn: {
+  detailValue: { fontSize: 11, fontWeight: '700' },
+  detailDivider: { width: 1, height: 24, backgroundColor: 'rgba(255,255,255,0.08)' },
+  actionsRow: {
+    flexDirection: 'row',
+  },
+  statusActionBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 9,
+    paddingVertical: 10,
     borderRadius: 10,
+    borderWidth: 1,
   },
-  actionBtnText: { fontSize: 12, fontWeight: '700' },
-  emptyBox: { alignItems: 'center', paddingVertical: 40, gap: 8 },
-  emptyTitle: { fontSize: 16, fontWeight: '800' },
+  statusActionBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
 });
-

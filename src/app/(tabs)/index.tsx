@@ -11,7 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
-import { EVENT_CATEGORIES, EVENTS } from '@/data/events';
+import { EVENT_CATEGORIES, EVENTS, matchCategory } from '@/data/events';
 import { eventService } from '@/services/eventService';
 import type { EventItem } from '@/types/event.types';
 
@@ -59,13 +59,17 @@ export default function HomeCatalogScreen() {
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     const matches = events.filter((event) => {
-      const matchesCategory = category === 'Todos' || event.category === category;
+      const matchesCategory = matchCategory(event.category, category);
+      const title = (event.title ?? '').toLowerCase();
+      const venue = (event.venue ?? (event as any).location ?? '').toLowerCase();
+      const city = (event.city ?? '').toLowerCase();
+      const organizer = (event.organizer ?? '').toLowerCase();
       const matchesQuery =
         normalized.length === 0 ||
-        event.title.toLowerCase().includes(normalized) ||
-        event.venue.toLowerCase().includes(normalized) ||
-        event.city.toLowerCase().includes(normalized) ||
-        event.organizer.toLowerCase().includes(normalized);
+        title.includes(normalized) ||
+        venue.includes(normalized) ||
+        city.includes(normalized) ||
+        organizer.includes(normalized);
       return matchesCategory && matchesQuery;
     });
     return [...matches].sort((a, b) =>

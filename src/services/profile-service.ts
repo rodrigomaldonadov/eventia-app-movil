@@ -1,9 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
+import api from './api';
+
+const isBackendConfigured = Boolean(process.env.EXPO_PUBLIC_API_URL);
 
 /**
  * Servicio de perfil de usuario: gestión de datos personales,
- * credenciales, fotos y preferencias en almacenamiento local.
+ * credenciales, fotos y preferencias conectado a Spring Boot + MySQL.
  */
 
 const CLAVE_PREFERENCIAS_STORAGE = '@eventia/profile_preferences_v1';
@@ -47,12 +50,36 @@ interface UsuarioAlmacenadoInterno {
 }
 
 /**
- * Obtiene la información personal completa del usuario desde la base de datos local.
+ * Obtiene la información personal completa del usuario desde MySQL (Spring Boot)
+ * o desde la base de datos local en caso de desconexión.
  */
 export async function obtenerDatosPersonalesUsuario(
   correoUsuario: string,
-  nombreFallback = 'Daniela Morales',
+  nombreFallback = 'Usuario Eventia',
 ): Promise<DatosPersonalesCompletos> {
+  if (isBackendConfigured && correoUsuario) {
+    try {
+      const response = await api.get<any>('/users/profile', {
+        params: { email: correoUsuario },
+      });
+      if (response.data) {
+        const u = response.data;
+        const nombre = (u.fullName || `${u.firstName || ''} ${u.lastName || ''}`).trim();
+        return {
+          nombreCompleto: nombre || nombreFallback,
+          tipoDocumento: u.documentType || 'DNI',
+          numeroDocumento: u.documentNumber || '',
+          telefono: u.phoneNumber || '',
+          fechaNacimiento: '14/08/1998',
+          correo: u.email || correoUsuario,
+          avatarUrl: u.avatarUrl,
+        };
+      }
+    } catch (e) {
+      console.warn('[profile-service] Error obteniendo perfil de Spring Boot, usando local:', e);
+    }
+  }
+
   try {
     const normEmail = correoUsuario.trim().toLowerCase();
     const usuariosCrudos = await AsyncStorage.getItem(CLAVE_USUARIOS_STORAGE);
@@ -67,8 +94,8 @@ export async function obtenerDatosPersonalesUsuario(
         return {
           nombreCompleto: `${usuarioEncontrado.firstName} ${usuarioEncontrado.lastName}`.trim(),
           tipoDocumento: usuarioEncontrado.documentType || 'DNI',
-          numeroDocumento: usuarioEncontrado.documentNumber || '74829103',
-          telefono: usuarioEncontrado.phoneNumber || '+51 987 654 321',
+          numeroDocumento: usuarioEncontrado.documentNumber || '',
+          telefono: usuarioEncontrado.phoneNumber || '',
           fechaNacimiento: usuarioEncontrado.birthDate || '14/08/1998',
           correo: usuarioEncontrado.email,
           avatarUrl: usuarioEncontrado.avatarUrl,
@@ -79,18 +106,18 @@ export async function obtenerDatosPersonalesUsuario(
     return {
       nombreCompleto: nombreFallback,
       tipoDocumento: 'DNI',
-      numeroDocumento: '74829103',
-      telefono: '+51 987 654 321',
+      numeroDocumento: '',
+      telefono: '',
       fechaNacimiento: '14/08/1998',
       correo: correoUsuario,
     };
   } catch (error) {
-    console.error('[ProfileService] Error al obtener datos personales:', error);
+    console.error('[ProfileService] Error al obtener datos personales locales:', error);
     return {
       nombreCompleto: nombreFallback,
       tipoDocumento: 'DNI',
-      numeroDocumento: '74829103',
-      telefono: '+51 987 654 321',
+      numeroDocumento: '',
+      telefono: '',
       fechaNacimiento: '14/08/1998',
       correo: correoUsuario,
     };
@@ -113,6 +140,23 @@ export async function actualizarCorreoUsuario(
         exito: true,
         mensaje: 'El correo electrónico es el mismo que el actual.',
       };
+    }
+
+    if (isBackendConfigured) {
+      try {
+        const response = await api.put('/users/profile', {
+          email: normNuevo,
+        });
+        if (response.data) {
+          return {
+            exito: true,
+            mensaje: 'Correo electrónico actualizado correctamente.',
+          };
+        }
+      } catch (e: any) {
+        const errorMsg = e?.response?.data?.message || e?.message;
+        throw new Error(errorMsg || 'Error al actualizar el correo en el servidor.');
+      }
     }
 
     const usuariosCrudos = await AsyncStorage.getItem(CLAVE_USUARIOS_STORAGE);
@@ -157,11 +201,12 @@ export async function actualizarCorreoUsuario(
 }
 
 /**
- * Modifica exclusivamente la contraseña generando un nuevo salt y hash SHA-256.
+ * Modifica la contraseña conectando directamente con Spring Boot + MySQL.
  */
 export async function actualizarContrasenaUsuario(
   correoUsuario: string,
   nuevaContrasena: string,
+  contrasenaActual?: string,
 ): Promise<{ exito: boolean; mensaje: string }> {
   try {
     const normEmail = correoUsuario.trim().toLowerCase();
@@ -172,6 +217,25 @@ export async function actualizarContrasenaUsuario(
     }
     if (!/[A-Za-z]/.test(contrasenaLimpia) || !/\d/.test(contrasenaLimpia)) {
       throw new Error('La nueva contraseña debe incluir al menos una letra y un número.');
+    }
+
+    if (isBackendConfigured) {
+      try {
+        const response = await api.put<{ success: boolean; message: string }>('/users/change-password', {
+          email: normEmail,
+          oldPassword: contrasenaActual || '',
+          newPassword: contrasenaLimpia,
+        });
+        if (response.data) {
+          return {
+            exito: true,
+            mensaje: response.data.message || '¡Contraseña actualizada con éxito!',
+          };
+        }
+      } catch (e: any) {
+        const errorMsg = e?.response?.data?.message || e?.message;
+        throw new Error(errorMsg || 'Error al actualizar la contraseña en el servidor.');
+      }
     }
 
     const usuariosCrudos = await AsyncStorage.getItem(CLAVE_USUARIOS_STORAGE);

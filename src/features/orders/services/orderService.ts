@@ -1,105 +1,40 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import api from '@/services/api';
+import type { CartItem } from '@/types/cart.types';
 import type { CreateOrderParams, Order } from '../types/order.types';
 
 const ORDERS_STORAGE_KEY = '@eventia_orders_v1';
+const isBackendConfigured = Boolean(process.env.EXPO_PUBLIC_API_URL);
 
-// Datos semilla basados en Stitch Vista 8 para pruebas y demo inmediata
-const SEED_ORDERS: Order[] = [
-  {
-    id: 'ord-nova-sound-2026',
-    orderNumber: 'EV-10492',
-    eventId: 'nova-sound-festival',
-    eventTitle: 'Nova Sound Festival 2026',
-    eventDate: 'Sábado 24 Octubre, 2026',
-    eventTime: '16:00 hrs',
-    eventVenue: 'Parque Bicentenario, CDMX',
-    imageUrl:
-      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1200&auto=format&fit=crop',
-    items: [
-      {
-        id: 'nova_gen',
-        eventId: 'nova-sound-festival',
-        eventTitle: 'Nova Sound Festival 2026',
-        eventDate: '2026-10-24',
-        eventVenue: 'Parque Bicentenario, CDMX',
-        ticketId: 'gen',
-        ticketName: 'General Pass',
-        price: 65,
-        quantity: 2,
-        available: 100,
-      },
-      {
-        id: 'nova_vip',
-        eventId: 'nova-sound-festival',
-        eventTitle: 'Nova Sound Festival 2026',
-        eventDate: '2026-10-24',
-        eventVenue: 'Parque Bicentenario, CDMX',
-        ticketId: 'vip',
-        ticketName: 'VIP Experience',
-        price: 140,
-        quantity: 1,
-        available: 30,
-      },
-    ],
-    totalTickets: 3,
-    subtotal: 270,
-    igv: 48.6,
-    total: 318.6,
-    status: 'PAGADA',
-    buyerName: 'Daniela Morales',
-    buyerEmail: 'daniela@eventia.io',
-    buyerDocument: '41.890.321-K',
-    qrCode: 'EVENTIA-EV-10492-VERIFIED-PASS-3X-ENTRADAS',
-    paymentMethod: 'Mercado Pago (Tarjeta)',
-    authorizationCode: 'AUTH-891042',
-    createdAt: new Date().toISOString(),
-    isUpcoming: true,
-  },
-  {
-    id: 'ord-indie-summit-2025',
-    orderNumber: 'EV-08311',
-    eventId: 'indie-summit-lima',
-    eventTitle: 'Lima Indie Music Summit 2025',
-    eventDate: '15 Enero, 2025',
-    eventTime: '20:00 hrs',
-    eventVenue: 'Barranco Arena, Lima',
-    imageUrl:
-      'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=1200&auto=format&fit=crop',
-    items: [
-      {
-        id: 'indie_std',
-        eventId: 'indie-summit-lima',
-        eventTitle: 'Lima Indie Music Summit 2025',
-        eventDate: '2025-01-15',
-        eventVenue: 'Barranco Arena, Lima',
-        ticketId: 'std',
-        ticketName: 'Pase General',
-        price: 90,
-        quantity: 1,
-        available: 50,
-      },
-    ],
-    totalTickets: 1,
-    subtotal: 90,
-    igv: 16.2,
-    total: 106.2,
-    status: 'PAGADA',
-    buyerName: 'Daniela Morales',
-    buyerEmail: 'daniela@eventia.io',
-    buyerDocument: '41.890.321-K',
-    qrCode: 'EVENTIA-EV-08311-COMPLETED',
-    paymentMethod: 'Tarjeta de Crédito',
-    authorizationCode: 'AUTH-112093',
-    createdAt: '2025-01-10T14:30:00.000Z',
-    isUpcoming: false,
-  },
-];
+interface BackendTicketDTO {
+  id: number;
+  qrCode: string;
+  eventTitle: string;
+  eventLocation: string;
+  eventDate: string;
+  ticketTypeName: string;
+  price: number;
+  status: string;
+  createdAt: string;
+}
+
+interface BackendOrderDTO {
+  id: number;
+  userId?: number;
+  userEmail?: string;
+  totalAmount: number;
+  discountAmount?: number;
+  paymentMethod?: string;
+  paymentStatus?: string;
+  createdAt?: string;
+  tickets?: BackendTicketDTO[];
+}
 
 export const orderService = {
   /**
    * Crea una nueva orden a partir de los datos del carrito y el pago.
+   * Envía la orden a MySQL a través de Spring Boot y descuenta el stock real.
    */
   async createOrder(params: CreateOrderParams): Promise<Order> {
     const primaryItem = params.items[0];
@@ -131,52 +66,133 @@ export const orderService = {
       isUpcoming: true,
     };
 
+    // 1. Guardar en Backend Spring Boot + MySQL
+    if (isBackendConfigured) {
+      try {
+        const payload = {
+          buyerName: params.buyerName,
+          buyerEmail: params.buyerEmail,
+          buyerDocument: params.buyerDocument,
+          paymentMethod: params.paymentMethod,
+          totalAmount: params.total,
+          items: params.items.map((it) => {
+            const parsedId = parseInt(it.ticketId, 10);
+            return {
+              ticketTypeId: !isNaN(parsedId) && parsedId > 0 ? parsedId : 1,
+              quantity: it.quantity,
+              unitPrice: it.price,
+            };
+          }),
+        };
+
+        const response = await api.post<BackendOrderDTO>('/orders', payload);
+        if (response.data && response.data.id) {
+          newOrder.orderNumber = `EV-${response.data.id}`;
+          newOrder.id = `ord_${response.data.id}`;
+        }
+      } catch (e) {
+        console.warn('[orderService.createOrder] Error guardando en backend:', e);
+      }
+    }
+
+    // 2. Guardar en AsyncStorage local como respaldo
     try {
-      const existing = await this.getOrders();
+      const existing = await this.getLocalOrders();
       const updated = [newOrder, ...existing];
       await AsyncStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
     } catch (e) {
-      console.warn('[OrderService]: Error al guardar la orden en AsyncStorage', e);
-    }
-
-    // Registrar en el backend Spring Boot (MySQL) si está disponible
-    try {
-      await api.post('/api/orders', {
-        buyerName: params.buyerName,
-        buyerEmail: params.buyerEmail,
-        buyerDocument: params.buyerDocument,
-        paymentMethod: params.paymentMethod,
-        totalAmount: params.total,
-        items: params.items.map((it) => ({
-          ticketTypeId: Number(it.ticketId) || 1,
-          quantity: it.quantity,
-          unitPrice: it.price,
-        })),
-      });
-    } catch (e) {
-      // Ignorar fallo de red para no bloquear la experiencia de compra
+      console.warn('[orderService.createOrder] Error guardando local:', e);
     }
 
     return newOrder;
   },
 
   /**
-   * Obtiene todas las órdenes almacenadas o carga los datos semilla.
+   * Obtiene las órdenes del usuario desde MySQL (Spring Boot) si hay conexión,
+   * o desde AsyncStorage si está sin red.
    */
-  async getOrders(): Promise<Order[]> {
+  async getOrders(userEmail?: string): Promise<Order[]> {
+    if (isBackendConfigured) {
+      try {
+        const params = userEmail ? { email: userEmail } : undefined;
+        const response = await api.get<BackendOrderDTO[]>('/orders/my-orders', { params });
+
+        if (Array.isArray(response.data)) {
+          return response.data.map((bo) => {
+            const firstTicket = bo.tickets?.[0];
+            const eventTitle = firstTicket?.eventTitle || 'Evento Eventia';
+            const eventDate = firstTicket?.eventDate || 'Fecha por confirmar';
+            const eventVenue = firstTicket?.eventLocation || 'Lima, Perú';
+
+            const items: CartItem[] = (bo.tickets && bo.tickets.length > 0)
+              ? bo.tickets.map((t) => ({
+                  id: String(t.id),
+                  eventId: 'evt_db',
+                  eventTitle: t.eventTitle,
+                  eventDate: t.eventDate,
+                  eventVenue: t.eventLocation,
+                  ticketId: String(t.id),
+                  ticketName: t.ticketTypeName,
+                  price: t.price,
+                  quantity: 1,
+                  available: 0,
+                }))
+              : [];
+
+            const totalTickets = bo.tickets?.length || 1;
+            const subtotal = Math.round((bo.totalAmount / 1.18) * 100) / 100;
+            const igv = Math.round((bo.totalAmount - subtotal) * 100) / 100;
+
+            const isUpcoming = true;
+
+            return {
+              id: `ord_${bo.id}`,
+              orderNumber: `EV-${bo.id}`,
+              eventId: 'evt_db',
+              eventTitle,
+              eventDate,
+              eventTime: '20:00 hrs',
+              eventVenue,
+              items,
+              totalTickets,
+              subtotal,
+              igv,
+              total: bo.totalAmount,
+              status: bo.paymentStatus === 'PAID' ? 'PAGADA' : 'PENDIENTE',
+              buyerName: 'Comprador Registrado',
+              buyerEmail: bo.userEmail || '',
+              buyerDocument: 'DNI Verificado',
+              qrCode: firstTicket?.qrCode || `EVENTIA-EV-${bo.id}-VALIDPASS`,
+              paymentMethod: bo.paymentMethod || 'Tarjeta',
+              authorizationCode: `AUTH-00${bo.id}`,
+              createdAt: bo.createdAt || new Date().toISOString(),
+              isUpcoming,
+            };
+          });
+        }
+      } catch (e) {
+        console.warn('[orderService.getOrders] Error obteniendo órdenes del backend, usando local:', e);
+      }
+    }
+
+    return this.getLocalOrders();
+  },
+
+  /**
+   * Obtiene las órdenes guardadas en AsyncStorage.
+   */
+  async getLocalOrders(): Promise<Order[]> {
     try {
       const raw = await AsyncStorage.getItem(ORDERS_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
-      // Inicializar con datos semilla si es la primera vez
-      await AsyncStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(SEED_ORDERS));
-      return SEED_ORDERS;
+      return [];
     } catch {
-      return SEED_ORDERS;
+      return [];
     }
   },
 
