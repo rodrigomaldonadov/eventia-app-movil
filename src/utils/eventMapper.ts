@@ -33,6 +33,10 @@ export interface EventSummaryBackendDto {
   categoryName: string;
   status: string;
   active: boolean;
+  /** Total de entradas disponibles sumando las tarifas activas del evento. */
+  availableTickets?: number;
+  /** Precio minimo entre las tarifas activas del evento. */
+  minPrice?: number | null;
 }
 
 /**
@@ -52,6 +56,18 @@ export interface EventDetailBackendDto extends EventSummaryBackendDto {
  * El detalle se enriquece por separado con getEventById.
  */
 export function mapSummaryToEventItem(dto: EventSummaryBackendDto): EventItem {
+  // El listado no trae las tarifas una por una, pero si el total disponible y el
+  // precio minimo. Con eso alcanza para el chip de disponibilidad y el "Desde S/".
+  const availableTickets = dto.availableTickets ?? 0;
+  const tickets: TicketType[] = availableTickets > 0
+    ? [{
+        id: `${dto.id}-general`,
+        name: 'General',
+        price: dto.minPrice ?? 0,
+        available: availableTickets,
+      }]
+    : [];
+
   return {
     id: String(dto.id),
     title: dto.title,
@@ -65,7 +81,7 @@ export function mapSummaryToEventItem(dto: EventSummaryBackendDto): EventItem {
     featured: false,
     imageUrl: dto.bannerUrl ?? undefined,
     edition: undefined,
-    tickets: [], // se poblan al consultar el detalle del evento
+    tickets, // resumen agregado: disponibilidad total + precio minimo
   };
 }
 

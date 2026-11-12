@@ -76,7 +76,7 @@ function mapBackendOrderToOrder(backendOrder: BackendOrder, fallbackParams?: Par
       quantity: d.quantity,
       available: 100,
     })),
-    totalTickets: totalTickets || 1,
+    totalTickets,
     subtotal,
     igv,
     total: backendOrder.totalAmount,
