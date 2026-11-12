@@ -122,4 +122,4 @@ function extractCity(location: string): string {
   return parts.length > 1 ? parts[parts.length - 1] : 'Lima';
 }
 
-export type { EventSummaryBackendDto, EventDetailBackendDto };
+

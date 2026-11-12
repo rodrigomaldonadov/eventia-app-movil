@@ -33,6 +33,8 @@ export interface EventItem {
   featured: boolean;
   imageUrl?: string;
   edition?: string;
+  active?: boolean;
+  status?: string;
   tickets: TicketType[];
 }
 

@@ -82,11 +82,7 @@ export default function MisEventosScreen() {
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.content}
-          refreshControl={
-            // eslint-disable-next-line react-native/no-color-literals
-            null
-          }>
+          contentContainerStyle={styles.content}>
           <View style={styles.header}>
             <ThemedText type="title" style={styles.title}>
               Mis Eventos
@@ -158,7 +154,7 @@ export default function MisEventosScreen() {
                         accessibilityLabel={
                           item.active ? 'Desactivar evento' : 'Activar evento'
                         }
-                        onPress={() => toggleActive(item.id, item.active)}
+                        onPress={() => toggleActive(item.id, Boolean(item.active))}
                         style={styles.toggleButton}
                       >
                         <Ionicons

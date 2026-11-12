@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/use-theme';
@@ -34,12 +34,23 @@ export default function PaymentScreen() {
   const theme = useTheme();
   const { user } = useAuth();
   const { items, subtotal, igv, total, totalTickets, clearCart } = useCart();
+  const { buyerName, buyerEmail, buyerDni } = useLocalSearchParams<{
+    buyerName?: string;
+    buyerEmail?: string;
+    buyerDni?: string;
+  }>();
+
+  const dynamicBuyerName =
+    buyerName ||
+    user?.fullName ||
+    (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '') ||
+    'TITULAR';
+  const dynamicBuyerEmail = buyerEmail || user?.email || 'comprador@eventia.io';
+  const dynamicBuyerDni = buyerDni || (user as any)?.dni || user?.documentNumber || '12345678';
 
   const [selectedGateway, setSelectedGateway] = useState<PaymentGatewayType>('card');
   const [cardNumber, setCardNumber] = useState('4532 8821 9910 8910');
-  const [cardHolder, setCardHolder] = useState(
-    user?.fullName ? user.fullName.toUpperCase() : 'DANIELA MORALES'
-  );
+  const [cardHolder, setCardHolder] = useState(dynamicBuyerName.toUpperCase());
   const [expiry, setExpiry] = useState('11/28');
   const [cvv, setCvv] = useState('842');
   const [installments, setInstallments] = useState(1);
@@ -108,9 +119,9 @@ export default function PaymentScreen() {
       description: `Entradas (${totalTickets}) para ${eventTitle}`,
       payer: {
         fullName: cardHolder,
-        email: user?.email || 'comprador@eventia.io',
+        email: dynamicBuyerEmail,
         documentType: 'DNI',
-        documentNumber: '41890321',
+        documentNumber: dynamicBuyerDni,
       },
       card: {
         cardNumber,
@@ -132,8 +143,8 @@ export default function PaymentScreen() {
         igv: igv || (total ? Math.round((total - total / 1.18) * 100) / 100 : 44),
         total: total || 288,
         buyerName: cardHolder,
-        buyerEmail: user?.email || 'comprador@eventia.io',
-        buyerDocument: '41.890.321-K',
+        buyerEmail: dynamicBuyerEmail,
+        buyerDocument: dynamicBuyerDni,
         paymentMethod: `Mercado Pago (${request.card?.brand?.toUpperCase() || 'Tarjeta'})`,
         authorizationCode: res.authorizationCode,
       });

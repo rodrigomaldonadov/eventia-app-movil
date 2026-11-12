@@ -4,6 +4,45 @@ export type OrderStatus = 'PAGADA' | 'PENDIENTE' | 'CANCELADA';
 
 export type OrderTabType = 'upcoming' | 'past';
 
+export interface BackendTicket {
+  id: number;
+  orderId: number;
+  eventId: number;
+  eventTitle: string;
+  ticketType: string;
+  eventDate: string;
+  venue: string;
+  status: 'VALID' | 'USED' | 'CANCELLED';
+  nombre?: string;
+  dni?: string;
+  qrCode: string;
+}
+
+export interface BackendOrderDetail {
+  ticketTypeId: number;
+  ticketTypeName: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  discountApplied: number;
+  tickets: BackendTicket[];
+}
+
+export interface BackendOrder {
+  id: number;
+  totalAmount: number;
+  discountAmount: number;
+  paymentMethod: string;
+  status: 'PAID' | 'PENDING' | 'CANCELLED';
+  createdAt: string;
+  details: BackendOrderDetail[];
+}
+
+export interface NominateTicketPayload {
+  nombre: string;
+  dni: string;
+}
+
 export interface OrderTicketItem {
   ticketId: string;
   ticketName: string;
@@ -34,6 +73,7 @@ export interface Order {
   authorizationCode?: string;
   createdAt: string;
   isUpcoming: boolean;
+  tickets?: BackendTicket[];
 }
 
 export interface CreateOrderParams {
