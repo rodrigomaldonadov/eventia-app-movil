@@ -4,14 +4,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatPricePEN } from '@/data/events';
-import type { TicketType } from '@/types/event.types';
+import type { TicketTypeDto } from '@/types/event.types';
 
 interface TicketCardProps {
-  ticket: TicketType;
+  ticket: TicketTypeDto;
   quantity: number;
   onIncrement: () => void;
   onDecrement: () => void;
+}
+
+function formatPricePEN(value: number): string {
+  return `S/ ${Number(value ?? 0).toFixed(2)}`;
 }
 
 export function TicketCard({
@@ -23,8 +26,10 @@ export function TicketCard({
   const theme = useTheme();
   const eventia = useEventiaTheme();
 
-  const isSoldOut = ticket.available <= 0;
-  const isMaxReached = quantity >= ticket.available;
+  const available = ticket.availableCapacity ?? 0;
+  const maxPerTicket = ticket.maxPerPurchase ?? 10;
+  const isSoldOut = available <= 0 || ticket.status === 'sold_out' || ticket.status === 'paused';
+  const isMaxReached = quantity >= Math.min(available, maxPerTicket);
 
   return (
     <View
@@ -33,25 +38,43 @@ export function TicketCard({
         { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected },
         quantity > 0 && { borderColor: eventia.primary, borderWidth: 1.5 },
       ]}>
-      {/* Cabecera del ticket: nombre y precio */}
       <View style={styles.header}>
         <View style={styles.titleCol}>
           <ThemedText type="smallBold" style={styles.ticketName}>
             {ticket.name}
           </ThemedText>
-          {isSoldOut ? (
-            <View style={styles.soldOutBadge}>
-              <ThemedText type="small" style={styles.soldOutText}>
-                Agotado
-              </ThemedText>
-            </View>
-          ) : ticket.available <= 10 ? (
-            <View style={styles.lowStockBadge}>
-              <ThemedText type="small" style={styles.lowStockText}>
-                Últimos {ticket.available}
-              </ThemedText>
-            </View>
-          ) : null}
+
+          <View style={styles.badgesRow}>
+            {ticket.zone ? (
+              <View style={[styles.zoneBadge, { backgroundColor: eventia.surfaceLow }]}>
+                <ThemedText type="small" style={[styles.zoneBadgeText, { color: eventia.primary }]}>
+                  {`Zona: ${ticket.zone}`}
+                </ThemedText>
+              </View>
+            ) : null}
+
+            {ticket.isPresale ? (
+              <View style={styles.presaleBadge}>
+                <ThemedText type="small" style={styles.presaleText}>
+                  Preventa
+                </ThemedText>
+              </View>
+            ) : null}
+
+            {isSoldOut ? (
+              <View style={styles.soldOutBadge}>
+                <ThemedText type="small" style={styles.soldOutText}>
+                  Agotado
+                </ThemedText>
+              </View>
+            ) : available <= 10 ? (
+              <View style={styles.lowStockBadge}>
+                <ThemedText type="small" style={styles.lowStockText}>
+                  {`Últimos ${available}`}
+                </ThemedText>
+              </View>
+            ) : null}
+          </View>
         </View>
 
         <View style={styles.priceCol}>
@@ -64,14 +87,12 @@ export function TicketCard({
         </View>
       </View>
 
-      {/* Descripción del acceso */}
-      {ticket.description ? (
-        <ThemedText type="small" themeColor="textSecondary" style={styles.description}>
-          {ticket.description}
+      <View style={styles.metaBox}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {`Stock disponible: ${available} de ${ticket.totalCapacity} · Máx. ${maxPerTicket} por compra`}
         </ThemedText>
-      ) : null}
+      </View>
 
-      {/* Pie del ticket: Disponibilidad y botones de cantidad */}
       <View style={[styles.footer, { borderTopColor: theme.backgroundSelected }]}>
         <ThemedText type="small" themeColor="textSecondary" style={styles.availabilityText}>
           {isSoldOut ? 'No disponible para compra' : 'Disponibilidad inmediata'}
@@ -85,7 +106,6 @@ export function TicketCard({
           </View>
         ) : (
           <View style={[styles.counterRow, { backgroundColor: theme.backgroundSelected }]}>
-            {/* Botón Disminuir [-] */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Disminuir ${ticket.name}`}
@@ -105,12 +125,10 @@ export function TicketCard({
               />
             </Pressable>
 
-            {/* Cantidad seleccionada */}
             <ThemedText type="smallBold" style={[styles.counterValue, { color: theme.text }]}>
               {quantity}
             </ThemedText>
 
-            {/* Botón Aumentar [+] */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Aumentar ${ticket.name}`}
@@ -151,14 +169,38 @@ const styles = StyleSheet.create({
   },
   titleCol: {
     flex: 1,
-    gap: 4,
+    gap: 6,
     paddingRight: 8,
   },
   ticketName: {
     fontSize: 16,
   },
+  badgesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  zoneBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  zoneBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  presaleBadge: {
+    backgroundColor: '#E0E7FF',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  presaleText: {
+    color: '#3730A3',
+    fontSize: 11,
+    fontWeight: '700',
+  },
   soldOutBadge: {
-    alignSelf: 'flex-start',
     backgroundColor: '#FEE2E2',
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -170,7 +212,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   lowStockBadge: {
-    alignSelf: 'flex-start',
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -188,8 +229,8 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
   },
-  description: {
-    lineHeight: 18,
+  metaBox: {
+    gap: 2,
   },
   footer: {
     flexDirection: 'row',
