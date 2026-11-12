@@ -1,7 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { formatPricePEN, formatShortDate } from '@/data/events';
 import { useTheme } from '@/hooks/use-theme';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import type { CartItem } from '@/types/cart.types';
@@ -11,6 +10,30 @@ interface CartItemCardProps {
   onIncrement: () => void;
   onDecrement: () => void;
   onRemove: () => void;
+}
+
+function formatPricePEN(value: number): string {
+  return `S/ ${Number(value ?? 0).toFixed(2)}`;
+}
+
+function formatShortDate(isoDate: string): string {
+  const [year, month, day] = (isoDate ?? '').split('-').map(Number);
+  if (!year || !month || !day) return isoDate;
+  const months = [
+    'ene',
+    'feb',
+    'mar',
+    'abr',
+    'may',
+    'jun',
+    'jul',
+    'ago',
+    'sep',
+    'oct',
+    'nov',
+    'dic',
+  ];
+  return `${day} ${months[(month ?? 1) - 1] ?? ''} ${year}`;
 }
 
 export function CartItemCard({
@@ -23,7 +46,13 @@ export function CartItemCard({
   const eventia = useEventiaTheme();
 
   const itemTotal = item.price * item.quantity;
-  const isMaxReached = item.quantity >= item.available;
+  const available = item.availableCapacity ?? item.available ?? 0;
+  const maxPerTicket = item.maxPerPurchase ?? 10;
+  const isMaxReached = item.quantity >= Math.min(available, maxPerTicket);
+  const isExceedingStock = item.quantity > available;
+
+  const bannerUri = item.bannerUrl || item.imageUrl;
+  const locationText = item.eventLocation || item.eventVenue;
 
   return (
     <View
@@ -31,13 +60,12 @@ export function CartItemCard({
         styles.card,
         {
           backgroundColor: theme.backgroundElement,
-          borderColor: theme.backgroundSelected,
+          borderColor: isExceedingStock ? '#EF4444' : theme.backgroundSelected,
         },
       ]}>
-      {/* Cabecera del Item: Imagen (si hay), Título del Evento y Botón Eliminar */}
       <View style={styles.headerRow}>
-        {item.imageUrl ? (
-          <Image source={{ uri: item.imageUrl }} style={styles.eventThumb} contentFit="cover" />
+        {bannerUri ? (
+          <Image source={{ uri: bannerUri }} style={styles.eventThumb} contentFit="cover" />
         ) : (
           <View style={[styles.thumbPlaceholder, { backgroundColor: theme.backgroundSelected }]}>
             <Ionicons name="calendar" size={18} color={eventia.primary} />
@@ -49,7 +77,7 @@ export function CartItemCard({
             {item.eventTitle}
           </Text>
           <Text style={[styles.eventMeta, { color: theme.textSecondary }]} numberOfLines={1}>
-            {`${formatShortDate(item.eventDate)} · ${item.eventVenue}`}
+            {`${formatShortDate(item.eventDate)} · ${locationText}`}
           </Text>
         </View>
 
@@ -65,14 +93,23 @@ export function CartItemCard({
 
       <View style={[styles.divider, { backgroundColor: theme.backgroundSelected }]} />
 
-      {/* Detalle del Ticket, Precio y Controles de Cantidad */}
       <View style={styles.ticketRow}>
         <View style={styles.ticketDetails}>
-          <Text style={[styles.ticketName, { color: theme.text }]}>{item.ticketName}</Text>
-          <Text style={[styles.unitPrice, { color: theme.textSecondary }]}>{`${formatPricePEN(item.price)} c/u`}</Text>
+          <Text style={[styles.ticketName, { color: theme.text }]}>
+            {item.zone ? `${item.ticketName} (${item.zone})` : item.ticketName}
+          </Text>
+          <Text style={[styles.unitPrice, { color: theme.textSecondary }]}>
+            {`${formatPricePEN(item.price)} c/u · Stock: ${available}`}
+          </Text>
+          {isExceedingStock ? (
+            <Text style={styles.stockWarning}>
+              {available <= 0
+                ? 'Entrada agotada en el servidor'
+                : `Solo quedan ${available} disponibles`}
+            </Text>
+          ) : null}
         </View>
 
-        {/* Controles de Cantidad */}
         <View style={[styles.counterRow, { backgroundColor: theme.backgroundSelected }]}>
           <TouchableOpacity
             accessibilityRole="button"
@@ -105,9 +142,8 @@ export function CartItemCard({
         </View>
       </View>
 
-      {/* Subtotal del item */}
       <View style={styles.subtotalRow}>
-        <Text style={[styles.subtotalLabel, { color: theme.textSecondary }]}>Subtotal item:</Text>
+        <Text style={[styles.subtotalLabel, { color: theme.textSecondary }]}>Subtotal:</Text>
         <Text style={[styles.subtotalValue, { color: eventia.price }]}>{formatPricePEN(itemTotal)}</Text>
       </View>
     </View>
@@ -172,6 +208,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   ticketDetails: {
+    flex: 1,
+    paddingRight: 8,
     gap: 2,
   },
   ticketName: {
@@ -182,6 +220,12 @@ const styles = StyleSheet.create({
   unitPrice: {
     fontSize: 12,
     color: '#64748B',
+  },
+  stockWarning: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#EF4444',
+    marginTop: 2,
   },
   counterRow: {
     flexDirection: 'row',

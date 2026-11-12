@@ -1,8 +1,63 @@
-/**
- * Tipos de datos para el módulo de Eventos.
- * Define las entidades y los formatos de solicitud y respuesta de la API.
- */
+export type EventStatus = 'PENDING' | 'PUBLISHED' | 'CANCELLED' | 'FINISHED';
 
+export type TicketTypeComputedStatus = 'active' | 'sold_out' | 'paused';
+
+// Estructura del detalle de evento devuelta por GET /api/events/{id}
+export interface EventDetailDto {
+  id: number;
+  title: string;
+  description: string | null;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  capacity: number;
+  bannerUrl: string | null;
+  status: EventStatus;
+  active: boolean;
+  categoryId: number | null;
+  categoryName: string | null;
+  organizerId: number | null;
+  organizerName: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Estructura de tipo de entrada devuelta por GET /api/events/{eventId}/ticket-types
+export interface TicketTypeDto {
+  id: number;
+  eventId: number;
+  eventTitle: string;
+  name: string;
+  zone: string | null;
+  price: number;
+  totalCapacity: number;
+  availableCapacity: number;
+  soldCount: number;
+  status: TicketTypeComputedStatus;
+  maxPerPurchase: number;
+  isPresale: boolean;
+  saleStartDate: string | null;
+  saleEndDate: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TicketSelectionItem {
+  ticketTypeId: number;
+  quantity: number;
+}
+
+export interface StockValidationResult {
+  valid: boolean;
+  eventId: number;
+  subtotal: number;
+  totalTickets: number;
+  updatedTicketTypes?: TicketTypeDto[];
+  message?: string;
+}
+
+// Tipos mantenidos para compatibilidad con el catálogo actual
 export type EventCategory =
   | 'Música'
   | 'Tech & Startups'
@@ -23,7 +78,6 @@ export interface EventItem {
   id: string;
   title: string;
   category: EventCategory;
-  /** Fecha en formato ISO (YYYY-MM-DD). */
   date: string;
   time: string;
   venue: string;
@@ -36,67 +90,4 @@ export interface EventItem {
   active?: boolean;
   status?: string;
   tickets: TicketType[];
-}
-
-/* =======================================================
- * CONTRATOS API REST: RESPONSES & REQUESTS (BACKEND DTOs)
- * ======================================================= */
-
-/**
- * Respuesta del backend al consultar el detalle de un evento:
- * GET /api/events/:id
- */
-export interface EventDetailResponse {
-  success?: boolean;
-  data: EventItem;
-  message?: string;
-}
-
-/**
- * Respuesta del backend al listar eventos:
- * GET /api/events
- */
-export interface EventListResponse {
-  success?: boolean;
-  data: EventItem[];
-  total?: number;
-  message?: string;
-}
-
-/**
- * Elemento de selección de entrada para validaciones y reservas.
- */
-export interface TicketSelectionItem {
-  ticketId: string;
-  quantity: number;
-}
-
-/**
- * Payload enviado al backend para validar disponibilidad y cálculo de precios:
- * POST /api/events/:id/validate-tickets
- */
-export interface ValidateTicketsPayload {
-  eventId: string;
-  items: TicketSelectionItem[];
-}
-
-/**
- * Respuesta del backend tras validar entradas seleccionadas.
- */
-export interface ValidateTicketsResponse {
-  valid: boolean;
-  eventId: string;
-  subtotal: number;
-  totalTickets: number;
-  message?: string;
-}
-
-/**
- * Respuesta de disponibilidad de stock en tiempo real:
- * GET /api/events/:id/tickets/:ticketId/availability
- */
-export interface TicketAvailabilityResponse {
-  ticketId: string;
-  available: number;
-  isAvailable: boolean;
 }

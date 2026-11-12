@@ -1,18 +1,14 @@
 import api from './api';
-import { getEventById as getMockEventById, EVENTS } from '@/data/events';
+import { EVENTS } from '@/data/events';
 import type {
-  EventDetailResponse,
+  EventDetailDto,
   EventItem,
-  EventListResponse,
-  TicketAvailabilityResponse,
-  TicketType,
-  ValidateTicketsPayload,
-  ValidateTicketsResponse,
+  StockValidationResult,
+  TicketSelectionItem,
+  TicketTypeDto,
 } from '@/types/event.types';
 import {
-  EventDetailBackendDto,
   EventSummaryBackendDto,
-  mapDetailToEventItem,
   mapSummaryToEventItem,
 } from '@/utils/eventMapper';
 
@@ -30,17 +26,32 @@ interface BackendPage<T> {
   number: number;
 }
 
-/**
- * Tarifa devuelta por el backend en GET /api/events/:eventId/ticket-types.
- */
-interface BackendTicketTypeDto {
-  id: number | string;
-  name: string;
-  zone?: string | null;
-  price: number;
-  totalCapacity: number;
-  availableCapacity: number;
-  status: string;
+const LEGACY_SLUG_TO_ID: Record<string, number> = {
+  'neon-wave-2025': 1,
+  'sonica-open-air': 2,
+  'indie-rock-sessions': 3,
+  'maridaje-craft-spirits': 4,
+  'founders-night': 5,
+  'tech-founders-summit': 6,
+  'hamlet-contemporaneo': 3,
+};
+
+// Convierte el id recibido por ruta al ID numérico real del backend
+export function resolveNumericEventId(rawId: string | number | undefined): number | null {
+  if (typeof rawId === 'number' && Number.isFinite(rawId) && rawId > 0) {
+    return rawId;
+  }
+  if (typeof rawId === 'string') {
+    const trimmed = rawId.trim();
+    const parsed = Number(trimmed);
+    if (Number.isInteger(parsed) && parsed > 0) {
+      return parsed;
+    }
+    if (LEGACY_SLUG_TO_ID[trimmed]) {
+      return LEGACY_SLUG_TO_ID[trimmed];
+    }
+  }
+  return null;
 }
 
 /**
@@ -64,7 +75,7 @@ export interface EventFilters {
  */
 export const eventService = {
   /**
-   * Obtiene la lista general de eventos.
+   * Obtiene la lista general de eventos (catálogo).
    * Endpoint: GET /api/events (con filtros opcionales)
    * Convierte Page<EventSummaryResponseDto> -> EventItem[]
    */
@@ -94,44 +105,109 @@ export const eventService = {
     }
   },
 
-  /**
-   * Obtiene el detalle de un evento por su ID junto con sus tarifas.
-   * Endpoints: GET /api/events/:id + GET /api/events/:id/ticket-types
-   */
-  async getEventById(id: string): Promise<EventItem | null> {
-    if (!isBackendConfigured) {
-      return getMockEventById(id) ?? null;
+  // Obtiene el detalle de un evento por su ID desde GET /api/events/{id}
+  async getEventById(id: number | string): Promise<EventDetailDto> {
+    const numericId = resolveNumericEventId(id);
+    if (!numericId) {
+      throw new Error('ID de evento inválido.');
     }
 
-    try {
-      const response = await api.get<EventDetailBackendDto>(`/events/${id}`);
-      const event = mapDetailToEventItem(response.data);
-      const tickets = await this.getTicketTypes(id);
-      return { ...event, tickets };
-    } catch {
-      return getMockEventById(id) ?? null;
-    }
+    const response = await api.get<EventDetailDto>(`/api/events/${numericId}`);
+    return response.data;
   },
 
-  /**
-   * Obtiene las tarifas activas de un evento.
-   * Endpoint: GET /api/events/:eventId/ticket-types
-   */
-  async getTicketTypes(eventId: string): Promise<TicketType[]> {
-    try {
-      const response = await api.get<BackendTicketTypeDto[]>(`/events/${eventId}/ticket-types`);
-      return (response.data ?? [])
-        .filter((ticket) => ticket.status !== 'paused' && ticket.status !== 'sold_out')
-        .map((ticket) => ({
-          id: String(ticket.id),
-          name: ticket.name,
-          price: ticket.price,
-          available: ticket.availableCapacity,
-          description: ticket.zone ?? undefined,
-        }));
-    } catch {
-      return [];
+  // Obtiene las tarifas activas y el stock de un evento desde GET /api/events/{id}/ticket-types
+  async getTicketTypesByEvent(eventId: number | string): Promise<TicketTypeDto[]> {
+    const numericId = resolveNumericEventId(eventId);
+    if (!numericId) {
+      throw new Error('ID de evento inválido.');
     }
+
+    const response = await api.get<TicketTypeDto[]>(`/api/events/${numericId}/ticket-types`);
+    return Array.isArray(response.data) ? response.data : [];
+  },
+
+  // Valida que las cantidades seleccionadas no superen el stock disponible en el backend
+  async validateTicketsStock(
+    eventId: number,
+    items: TicketSelectionItem[],
+  ): Promise<StockValidationResult> {
+    const ticketTypes = await this.getTicketTypesByEvent(eventId);
+
+    let subtotal = 0;
+    let totalTickets = 0;
+
+    for (const selection of items) {
+      if (selection.quantity <= 0) continue;
+
+      const ticket = ticketTypes.find((t) => t.id === selection.ticketTypeId);
+      if (!ticket || ticket.status === 'paused') {
+        return {
+          valid: false,
+          eventId,
+          subtotal: 0,
+          totalTickets: 0,
+          updatedTicketTypes: ticketTypes,
+          message: 'Una de las entradas seleccionadas ya no está disponible.',
+        };
+      }
+
+      if (ticket.availableCapacity <= 0) {
+        return {
+          valid: false,
+          eventId,
+          subtotal: 0,
+          totalTickets: 0,
+          updatedTicketTypes: ticketTypes,
+          message: `La entrada "${ticket.name}" está agotada.`,
+        };
+      }
+
+      if (selection.quantity > ticket.availableCapacity) {
+        return {
+          valid: false,
+          eventId,
+          subtotal: 0,
+          totalTickets: 0,
+          updatedTicketTypes: ticketTypes,
+          message: `Solo quedan ${ticket.availableCapacity} entradas disponibles para "${ticket.name}".`,
+        };
+      }
+
+      const maxPerTicket = ticket.maxPerPurchase ?? 10;
+      if (selection.quantity > maxPerTicket) {
+        return {
+          valid: false,
+          eventId,
+          subtotal: 0,
+          totalTickets: 0,
+          updatedTicketTypes: ticketTypes,
+          message: `Solo se pueden comprar hasta ${maxPerTicket} entradas de "${ticket.name}".`,
+        };
+      }
+
+      subtotal += ticket.price * selection.quantity;
+      totalTickets += selection.quantity;
+    }
+
+    if (totalTickets > 10) {
+      return {
+        valid: false,
+        eventId,
+        subtotal: 0,
+        totalTickets: 0,
+        updatedTicketTypes: ticketTypes,
+        message: 'Solo se pueden comprar hasta 10 entradas por compra.',
+      };
+    }
+
+    return {
+      valid: true,
+      eventId,
+      subtotal: Math.round(subtotal * 100) / 100,
+      totalTickets,
+      updatedTicketTypes: ticketTypes,
+    };
   },
 
   /**
@@ -165,91 +241,6 @@ export const eventService = {
     await api.patch(`/events/${eventId}/active`, null, {
       params: { active },
     });
-  },
-
-  /**
-   * Consulta el stock disponible de un tipo de entrada.
-   * Endpoint: GET /api/events/:eventId/tickets/:ticketId/availability
-   */
-  async checkTicketAvailability(
-    eventId: string,
-    ticketId: string,
-  ): Promise<TicketAvailabilityResponse> {
-    if (isBackendConfigured) {
-      try {
-        const response = await api.get<TicketAvailabilityResponse>(
-          `/events/${eventId}/tickets/${ticketId}/availability`,
-        );
-        return response.data;
-      } catch {
-        // Continúa con la respuesta local si el backend no responde
-      }
-    }
-
-    const event = getMockEventById(eventId);
-    const ticket = event?.tickets.find((t) => t.id === ticketId);
-    const available = ticket?.available ?? 0;
-
-    return {
-      ticketId,
-      available,
-      isAvailable: available > 0,
-    };
-  },
-
-  /**
-   * Valida la cantidad de entradas seleccionadas frente al stock disponible.
-   * Endpoint: POST /api/events/:eventId/validate-tickets
-   */
-  async validateTickets(payload: ValidateTicketsPayload): Promise<ValidateTicketsResponse> {
-    if (isBackendConfigured) {
-      try {
-        const response = await api.post<ValidateTicketsResponse>(
-          `/events/${payload.eventId}/validate-tickets`,
-          payload,
-        );
-        return response.data;
-      } catch {
-        // Continúa con la validación local si el backend no responde
-      }
-    }
-
-    const event = getMockEventById(payload.eventId);
-    if (!event) {
-      return {
-        valid: false,
-        eventId: payload.eventId,
-        subtotal: 0,
-        totalTickets: 0,
-        message: 'Evento no encontrado.',
-      };
-    }
-
-    let subtotal = 0;
-    let totalTickets = 0;
-
-    for (const item of payload.items) {
-      const ticket = event.tickets.find((t) => t.id === item.ticketId);
-      if (!ticket || item.quantity > ticket.available) {
-        return {
-          valid: false,
-          eventId: payload.eventId,
-          subtotal: 0,
-          totalTickets: 0,
-          message: `No hay suficiente disponibilidad para la entrada "${ticket?.name ?? item.ticketId}".`,
-        };
-      }
-      subtotal += ticket.price * item.quantity;
-      totalTickets += item.quantity;
-    }
-
-    return {
-      valid: true,
-      eventId: payload.eventId,
-      subtotal,
-      totalTickets,
-      message: 'Entradas validadas correctamente.',
-    };
   },
 };
 

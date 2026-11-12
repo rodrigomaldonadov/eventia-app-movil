@@ -1,23 +1,28 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { formatPricePEN } from '@/data/events';
 import { useTheme } from '@/hooks/use-theme';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 
 interface EventCheckoutBarProps {
   totalTickets: number;
   subtotal: number;
+  isSubmitting?: boolean;
   onContinue: () => void;
+}
+
+function formatPricePEN(value: number): string {
+  return `S/ ${Number(value ?? 0).toFixed(2)}`;
 }
 
 export function EventCheckoutBar({
   totalTickets,
   subtotal,
+  isSubmitting = false,
   onContinue,
 }: EventCheckoutBarProps) {
   const theme = useTheme();
   const eventia = useEventiaTheme();
-  const isDisabled = totalTickets === 0;
+  const isDisabled = totalTickets === 0 || isSubmitting;
 
   return (
     <View
@@ -49,9 +54,13 @@ export function EventCheckoutBar({
           styles.button,
           { backgroundColor: isDisabled ? '#94A3B8' : eventia.primaryContainer },
         ]}>
-        <Ionicons name="cart" size={18} color="#FFFFFF" />
+        {isSubmitting ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <Ionicons name="cart" size={18} color="#FFFFFF" />
+        )}
         <Text style={styles.buttonText}>
-          Agregar al Carrito
+          {isSubmitting ? 'Validando stock...' : 'Agregar al Carrito'}
         </Text>
       </TouchableOpacity>
     </View>

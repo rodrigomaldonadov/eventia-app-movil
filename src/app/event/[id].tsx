@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,34 +17,82 @@ import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { CATEGORY_COVER, formatPricePEN, getEventById as getMockEventById } from '@/data/events';
 import { eventService } from '@/services/eventService';
-import type { EventItem, TicketType, ValidateTicketsPayload } from '@/types/event.types';
+import type { EventDetailDto, TicketSelectionItem, TicketTypeDto } from '@/types/event.types';
 import { useCart } from '@/hooks/use-cart';
 import { EventInfoSection } from '@/components/event/EventInfoSection';
 import { TicketCard } from '@/components/event/TicketCard';
 import { EventCheckoutBar } from '@/components/event/EventCheckoutBar';
 
+// Define un color de portada de respaldo según la categoría del evento
+function getCategoryCoverColor(categoryName: string | null | undefined): string {
+  const normalized = (categoryName ?? '').toLowerCase();
+  if (normalized.includes('concierto') || normalized.includes('música')) return '#4F46E5';
+  if (normalized.includes('festival')) return '#9333EA';
+  if (normalized.includes('teatro') || normalized.includes('arte')) return '#B45309';
+  if (normalized.includes('tecnolog') || normalized.includes('tech')) return '#0B1C30';
+  if (normalized.includes('gastronom')) return '#006E4B';
+  return '#4F46E5';
+}
+
 export default function EventDetailScreen() {
   const router = useRouter();
   const theme = useTheme();
   const eventia = useEventiaTheme();
-  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { addEventSelection, totalTickets: cartTotalTickets } = useCart();
 
-  // Obtiene el evento inmediatamente de los datos locales
-  const [event, setEvent] = useState<EventItem | null>(() => (id ? getMockEventById(id) ?? null : null));
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [event, setEvent] = useState<EventDetailDto | null>(null);
+  const [ticketTypes, setTicketTypes] = useState<TicketTypeDto[]>([]);
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Si no está en datos locales y se configuró un backend, intenta cargarlo vía API
-  useEffect(() => {
-    if (!event && id) {
-      eventService.getEventById(id).then((data) => {
-        if (data) setEvent(data);
-      });
+  // Consulta el detalle del evento y sus tipos de entrada desde el backend
+  const fetchEventData = useCallback(async () => {
+    if (!id) {
+      setErrorMessage('ID de evento no proporcionado.');
+      setIsLoading(false);
+      return;
     }
-  }, [id, event]);
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const [eventData, ticketsData] = await Promise.all([
+        eventService.getEventById(id),
+        eventService.getTicketTypesByEvent(id),
+      ]);
+      setEvent(eventData);
+      setTicketTypes(ticketsData);
+    } catch {
+      setEvent(null);
+      setTicketTypes([]);
+      setErrorMessage('No se pudo cargar el evento desde el servidor.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchEventData();
+  }, [fetchEventData]);
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.centerContainer}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={styles.notFoundContent}>
+          <ActivityIndicator size="large" color={eventia.primary} />
+          <ThemedText type="smallBold" style={styles.centerText}>
+            Cargando detalle del evento...
+          </ThemedText>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
 
   if (!event) {
     return (
@@ -52,35 +101,64 @@ export default function EventDetailScreen() {
         <SafeAreaView style={styles.notFoundContent}>
           <Ionicons name="alert-circle-outline" size={56} color={theme.textSecondary} />
           <ThemedText type="subtitle" style={styles.centerText}>
-            Evento no encontrado
+            Evento no disponible
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.centerText}>
-            El evento solicitado no existe o ya no se encuentra disponible.
+            {errorMessage ?? 'El evento solicitado no existe o ya no se encuentra disponible.'}
           </ThemedText>
-          <Pressable
-            onPress={() => router.back()}
-            style={[styles.backButton, { backgroundColor: eventia.primaryContainer }]}>
-            <ThemedText type="smallBold" style={styles.backButtonText}>
-              Volver al catálogo
-            </ThemedText>
-          </Pressable>
+          <View style={styles.errorActions}>
+            <Pressable
+              onPress={fetchEventData}
+              style={[styles.retryButton, { borderColor: eventia.primary }]}>
+              <ThemedText type="smallBold" style={{ color: eventia.primary }}>
+                Reintentar
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => router.back()}
+              style={[styles.backButton, { backgroundColor: eventia.primaryContainer }]}>
+              <ThemedText type="smallBold" style={styles.backButtonText}>
+                Volver al catálogo
+              </ThemedText>
+            </Pressable>
+          </View>
         </SafeAreaView>
       </ThemedView>
     );
   }
 
-  // Aumenta la cantidad de una entrada validando su stock
-  const handleIncrement = (ticket: TicketType) => {
+  const totalTickets = Object.values(quantities).reduce((acc, qty) => acc + qty, 0);
+  const subtotal = ticketTypes.reduce((sum, ticket) => {
+    const qty = quantities[ticket.id] ?? 0;
+    return sum + qty * ticket.price;
+  }, 0);
+
+  // Incrementa la cantidad seleccionada verificando el stock y el máximo por compra
+  const handleIncrement = (ticket: TicketTypeDto) => {
     const current = quantities[ticket.id] ?? 0;
-    if (current >= ticket.available) {
-      Alert.alert('Límite de stock', `Solo quedan ${ticket.available} entradas disponibles.`);
+    const available = ticket.availableCapacity ?? 0;
+    const maxPerTicket = ticket.maxPerPurchase ?? 10;
+
+    if (totalTickets >= 10) {
+      Alert.alert('Límite por compra', 'Solo puedes seleccionar hasta 10 entradas por compra.');
       return;
     }
+
+    if (current >= maxPerTicket) {
+      Alert.alert('Límite por tarifa', `Solo puedes seleccionar hasta ${maxPerTicket} entradas de "${ticket.name}".`);
+      return;
+    }
+
+    if (current >= available) {
+      Alert.alert('Límite de stock', `Solo quedan ${available} entradas disponibles para "${ticket.name}".`);
+      return;
+    }
+
     setQuantities({ ...quantities, [ticket.id]: current + 1 });
   };
 
-  // Disminuye la cantidad de una entrada
-  const handleDecrement = (ticketId: string) => {
+  // Disminuye la cantidad seleccionada de una entrada
+  const handleDecrement = (ticketId: number) => {
     const current = quantities[ticketId] ?? 0;
     if (current <= 0) return;
     const next = { ...quantities };
@@ -92,44 +170,58 @@ export default function EventDetailScreen() {
     setQuantities(next);
   };
 
-  // Conteo total y subtotal calculado
-  const totalTickets = Object.values(quantities).reduce((acc, qty) => acc + qty, 0);
-  const subtotal = event.tickets.reduce((sum, ticket) => {
-    const qty = quantities[ticket.id] ?? 0;
-    return sum + qty * ticket.price;
-  }, 0);
-
-  // Valida y prepara las entradas para transferir al carrito
+  // Valida el stock con el backend y guarda las entradas seleccionadas en el carrito
   const handleContinue = async () => {
     if (totalTickets === 0) {
       Alert.alert('Selecciona tus entradas', 'Debes seleccionar al menos una entrada para continuar.');
       return;
     }
 
-    const payload: ValidateTicketsPayload = {
-      eventId: event.id,
-      items: Object.entries(quantities).map(([ticketId, quantity]) => ({
-        ticketId,
-        quantity,
-      })),
-    };
+    setIsSubmitting(true);
+    try {
+      const selections: TicketSelectionItem[] = Object.entries(quantities).map(
+        ([ticketId, quantity]) => ({
+          ticketTypeId: Number(ticketId),
+          quantity,
+        }),
+      );
 
-    const result = await eventService.validateTickets(payload);
-    if (!result.valid) {
-      Alert.alert('Disponibilidad', result.message ?? 'No hay suficiente disponibilidad.');
-      return;
+      const result = await eventService.validateTicketsStock(event.id, selections);
+      if (result.updatedTicketTypes) {
+        setTicketTypes(result.updatedTicketTypes);
+      }
+
+      if (!result.valid) {
+        Alert.alert('Disponibilidad de stock', result.message ?? 'No hay suficiente stock disponible.');
+        return;
+      }
+
+      const freshTicketTypes = result.updatedTicketTypes ?? ticketTypes;
+      addEventSelection(event, freshTicketTypes, quantities);
+      setQuantities({});
+
+      Alert.alert(
+        'Entradas agregadas',
+        'Tus entradas se agregaron al carrito correctamente.',
+        [
+          { text: 'Seguir viendo', style: 'cancel' },
+          {
+            text: 'Ir al Carrito',
+            onPress: () => router.push('/cart' as never),
+          },
+        ],
+      );
+    } catch {
+      Alert.alert('Error de conexión', 'No se pudo verificar la disponibilidad con el servidor.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Agrega las entradas al carrito compartido directamente
-    addEventSelection(event, quantities);
-    setQuantities({});
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Barra superior con botón de regreso y acceso al carrito */}
       <View style={[styles.topBar, { backgroundColor: theme.background }]}>
         <View style={styles.topBarInner}>
           <Pressable
@@ -168,18 +260,20 @@ export default function EventDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 }]}>
         <View style={styles.mainWrapper}>
-          {/* Imagen de Portada */}
           <View style={styles.imageContainer}>
-            {event.imageUrl ? (
+            {event.bannerUrl ? (
               <Image
-                source={{ uri: event.imageUrl }}
+                source={{ uri: event.bannerUrl }}
                 style={styles.heroImage}
                 contentFit="cover"
                 transition={200}
               />
             ) : (
               <View
-                style={[styles.heroPlaceholder, { backgroundColor: CATEGORY_COVER[event.category] }]}>
+                style={[
+                  styles.heroPlaceholder,
+                  { backgroundColor: getCategoryCoverColor(event.categoryName) },
+                ]}>
                 <ThemedText type="title" style={styles.placeholderInitial}>
                   {event.title.charAt(0)}
                 </ThemedText>
@@ -187,7 +281,6 @@ export default function EventDetailScreen() {
             )}
           </View>
 
-          {/* Información del Evento y Entradas */}
           <View style={styles.contentSection}>
             <EventInfoSection event={event} />
 
@@ -201,26 +294,34 @@ export default function EventDetailScreen() {
                 </ThemedText>
               </View>
 
-              <View style={styles.ticketsList}>
-                {event.tickets.map((ticket) => (
-                  <TicketCard
-                    key={ticket.id}
-                    ticket={ticket}
-                    quantity={quantities[ticket.id] ?? 0}
-                    onIncrement={() => handleIncrement(ticket)}
-                    onDecrement={() => handleDecrement(ticket.id)}
-                  />
-                ))}
-              </View>
+              {ticketTypes.length === 0 ? (
+                <View style={[styles.emptyTicketsBox, { backgroundColor: theme.backgroundElement }]}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    No hay tipos de entrada activos para este evento.
+                  </ThemedText>
+                </View>
+              ) : (
+                <View style={styles.ticketsList}>
+                  {ticketTypes.map((ticket) => (
+                    <TicketCard
+                      key={ticket.id}
+                      ticket={ticket}
+                      quantity={quantities[ticket.id] ?? 0}
+                      onIncrement={() => handleIncrement(ticket)}
+                      onDecrement={() => handleDecrement(ticket.id)}
+                    />
+                  ))}
+                </View>
+              )}
             </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* Barra Inferior Fija de Subtotales y Continuar */}
       <EventCheckoutBar
         totalTickets={totalTickets}
         subtotal={subtotal}
+        isSubmitting={isSubmitting}
         onContinue={handleContinue}
       />
     </SafeAreaView>
@@ -245,8 +346,18 @@ const styles = StyleSheet.create({
   centerText: {
     textAlign: 'center',
   },
-  backButton: {
+  errorActions: {
+    flexDirection: 'row',
+    gap: 12,
     marginTop: Spacing.three,
+  },
+  retryButton: {
+    paddingHorizontal: Spacing.four,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  backButton: {
     paddingHorizontal: Spacing.four,
     paddingVertical: 12,
     borderRadius: 12,
@@ -357,6 +468,11 @@ const styles = StyleSheet.create({
   },
   ticketsList: {
     gap: 12,
+  },
+  emptyTicketsBox: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
   },
   pressed: {
     opacity: 0.8,
