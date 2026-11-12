@@ -37,10 +37,16 @@ export function TarjetaPerfilUsuario({
             estilos.contenedorAvatar,
             pressed && estilos.avatarPresionado,
           ]}>
-          <Image
-            source={{ uri: urlFoto || FOTO_PERFIL_POR_DEFECTO }}
-            style={estilos.imagenAvatar}
-          />
+          {urlFoto ? (
+            <Image
+              source={{ uri: urlFoto }}
+              style={estilos.imagenAvatar}
+            />
+          ) : (
+            <View style={[estilos.imagenAvatar, estilos.avatarFallback, { backgroundColor: '#312E81' }]}>
+              <Ionicons name="person" size={32} color="#A5B4FC" />
+            </View>
+          )}
           <View
             style={[
               estilos.insigniaCamara,
@@ -116,6 +122,10 @@ const estilos = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     backgroundColor: '#E2E8F0',
+  },
+  avatarFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   insigniaCamara: {
     position: 'absolute',

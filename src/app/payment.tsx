@@ -19,10 +19,10 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatPricePEN } from '@/data/events';
 
 import { CreditCardVisual } from '@/features/payments/components/CreditCardVisual';
-import { InstallmentsSelector } from '@/features/payments/components/InstallmentsSelector';
 import { PaymentProcessingModal } from '@/features/payments/components/PaymentProcessingModal';
 import { paymentService } from '@/features/payments/services/paymentService';
 import { orderService } from '@/features/orders/services/orderService';
+import { eventService } from '@/services/eventService';
 import type {
   PaymentGatewayType,
   PaymentTransactionRequest,
@@ -49,18 +49,27 @@ export default function PaymentScreen() {
   const dynamicBuyerDni = buyerDni || (user as any)?.dni || user?.documentNumber || '12345678';
 
   const [selectedGateway, setSelectedGateway] = useState<PaymentGatewayType>('card');
+<<<<<<< HEAD
   const [cardNumber, setCardNumber] = useState('');
   const [cardHolder, setCardHolder] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
   const [installments, setInstallments] = useState(1);
+=======
+  const [cardNumber, setCardNumber] = useState('4000 0000 0000 0000');
+  const [cardHolder, setCardHolder] = useState(
+    user?.fullName ? user.fullName.toUpperCase() : 'CLIENTE PRUEBA'
+  );
+  const [expiry, setExpiry] = useState('12/28');
+  const [cvv, setCvv] = useState('123');
+>>>>>>> origin/feat/implGeneral
 
   // Estados de Modal y procesamiento
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transactionResult, setTransactionResult] = useState<PaymentTransactionResponse | null>(null);
 
-  const eventTitle = items[0]?.eventTitle || 'Electric Odyssey 2025';
+  const eventTitle = items[0]?.eventTitle || 'Evento Eventia';
 
   const handleCardNumberChange = (text: string) => {
     setCardNumber(paymentService.formatCardNumber(text));
@@ -70,6 +79,26 @@ export default function PaymentScreen() {
     setExpiry(paymentService.formatExpiry(text));
   };
 
+<<<<<<< HEAD
+=======
+  // Simular botón de prueba rápida con tarjetas Culqi oficial
+  const setTestScenario = (type: 'approved' | 'insufficient_funds' | 'expired') => {
+    if (type === 'approved') {
+      setCardNumber('4000 0000 0000 0000');
+      setExpiry('12/28');
+      setCvv('123');
+    } else if (type === 'insufficient_funds') {
+      setCardNumber('4000 0000 0000 0002');
+      setExpiry('12/28');
+      setCvv('123');
+    } else if (type === 'expired') {
+      setCardNumber('4000 0000 0000 0003');
+      setExpiry('01/22');
+      setCvv('123');
+    }
+  };
+
+>>>>>>> origin/feat/implGeneral
   const executeTransaction = async () => {
     if (selectedGateway === 'card') {
       if (cardNumber.replace(/\s+/g, '').length < 16) {
@@ -119,7 +148,7 @@ export default function PaymentScreen() {
         expiryMonth: expiry.slice(0, 2),
         expiryYear: expiry.slice(3),
         cvv,
-        installments,
+        installments: 1,
         brand: paymentService.detectCardBrand(cardNumber),
       },
     };
@@ -132,12 +161,28 @@ export default function PaymentScreen() {
         subtotal: subtotal || (total ? Math.round((total / 1.18) * 100) / 100 : 244),
         igv: igv || (total ? Math.round((total - total / 1.18) * 100) / 100 : 44),
         total: total || 288,
+<<<<<<< HEAD
         buyerName: dynamicBuyerName,
         buyerEmail: dynamicBuyerEmail,
         buyerDocument: dynamicBuyerDni,
         paymentMethod: `Mercado Pago (${request.card?.brand?.toUpperCase() || 'Tarjeta'})`,
+=======
+        buyerName: cardHolder,
+        buyerEmail: user?.email || 'comprador@eventia.io',
+        buyerDocument: '41.890.321-K',
+        paymentMethod: `Culqi (${request.card?.brand?.toUpperCase() || 'Tarjeta'})`,
+>>>>>>> origin/feat/implGeneral
         authorizationCode: res.authorizationCode,
       });
+
+      // Descontar stock real en el almacenamiento reactivo de eventos
+      await eventService.decrementBatchStock(
+        items.map((i) => ({
+          eventId: i.eventId,
+          ticketId: i.ticketId,
+          quantity: i.quantity,
+        }))
+      );
     }
 
     setIsProcessing(false);
@@ -179,6 +224,34 @@ export default function PaymentScreen() {
             expiry={expiry}
           />
 
+<<<<<<< HEAD
+=======
+          {/* Sandbox Test Scenarios Toolbar */}
+          <View style={styles.sandboxBox}>
+            <View style={styles.sandboxHeader}>
+              <Ionicons name="flask-outline" size={15} color={Eventia.primary} />
+              <Text style={styles.sandboxTitle}>Tarjetas de Prueba Culqi (Sandbox)</Text>
+            </View>
+            <View style={styles.sandboxButtonsRow}>
+              <TouchableOpacity
+                onPress={() => setTestScenario('approved')}
+                style={[styles.sandboxPill, styles.pillSuccess]}>
+                <Text style={styles.pillTextSuccess}>Aprobada (OK)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setTestScenario('insufficient_funds')}
+                style={[styles.sandboxPill, styles.pillDanger]}>
+                <Text style={styles.pillTextDanger}>Fondos Insuf.</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setTestScenario('expired')}
+                style={[styles.sandboxPill, styles.pillWarn]}>
+                <Text style={styles.pillTextWarn}>Expirada</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+>>>>>>> origin/feat/implGeneral
           {/* Formulario de Entrada de Tarjeta */}
           <View style={styles.formCard}>
             <Text style={styles.formSectionTitle}>Detalles de la Tarjeta</Text>
@@ -189,7 +262,7 @@ export default function PaymentScreen() {
                 <TextInput
                   value={cardNumber}
                   onChangeText={handleCardNumberChange}
-                  placeholder="4532 8821 9910 8910"
+                  placeholder="4000 0000 0000 0000"
                   placeholderTextColor="#94A3B8"
                   keyboardType="numeric"
                   maxLength={19}
@@ -204,7 +277,7 @@ export default function PaymentScreen() {
               <TextInput
                 value={cardHolder}
                 onChangeText={setCardHolder}
-                placeholder="DANIELA MORALES"
+                placeholder="CLIENTE PRUEBA"
                 placeholderTextColor="#94A3B8"
                 autoCapitalize="characters"
                 style={styles.textInputRegular}
@@ -244,13 +317,6 @@ export default function PaymentScreen() {
             </View>
           </View>
 
-          {/* Selector de Cuotas Mercado Pago */}
-          <InstallmentsSelector
-            totalAmount={total || 288}
-            selectedInstallments={installments}
-            onSelectInstallments={setInstallments}
-          />
-
           {/* Botón de Confirmación y Pago */}
           <TouchableOpacity
             activeOpacity={0.8}
@@ -258,14 +324,14 @@ export default function PaymentScreen() {
             style={styles.payButton}>
             <Ionicons name="lock-closed" size={18} color="#FFFFFF" />
             <Text style={styles.payButtonText}>
-              Pagar {formatPricePEN(total || 288)} con Mercado Pago
+              Pagar {formatPricePEN(total || 0)} con Culqi
             </Text>
           </TouchableOpacity>
 
           <View style={styles.footerSeal}>
             <Ionicons name="shield-checkmark-outline" size={16} color="#64748B" />
             <Text style={styles.footerSealText}>
-              Transacción protegida por Mercado Pago Gateway y PCI Compliance Nivel 1
+              Transacción protegida por Culqi Online Payments
             </Text>
           </View>
         </View>

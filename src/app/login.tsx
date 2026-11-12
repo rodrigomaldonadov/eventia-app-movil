@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, type UserRole } from '@/hooks/use-auth';
 import { authService } from '@/services/authService';
 import { validateEmail, validatePassword } from '@/utils/auth-validation';
 import { useColorScheme } from 'react-native';
@@ -57,9 +57,11 @@ export default function LoginScreen() {
           id: String(response.user.id),
           fullName: response.user.name,
           email: response.user.email,
+          role: response.user.role as UserRole,
           documentType: response.user.documentType ?? undefined,
           documentNumber: response.user.dni ?? undefined,
           dni: response.user.dni ?? undefined,
+          phoneNumber: response.user.cellphone ?? undefined,
         },
         response.token,
       );

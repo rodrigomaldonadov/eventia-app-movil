@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+=======
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
+>>>>>>> origin/feat/implGeneral
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 
 import { CategoryChips, type CategoryFilter } from '@/components/category-chips';
 import { EventCard } from '@/components/event-card';
@@ -8,22 +14,35 @@ import { HeroCard } from '@/components/hero-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
+<<<<<<< HEAD
 import { EVENT_CATEGORIES } from '@/data/events';
+=======
+import { EVENT_CATEGORIES, EVENTS, matchCategory } from '@/data/events';
+>>>>>>> origin/feat/implGeneral
 import { eventService } from '@/services/eventService';
 import type { EventItem } from '@/types/event.types';
 
 const FILTERS: readonly CategoryFilter[] = ['Todos', ...EVENT_CATEGORIES];
 
 /**
+<<<<<<< HEAD
  * Home / Catálogo general de eventos (Integrante 4 · RF-04).
  * Conecta con GET /api/events del backend y convierte Page<T> a lista mediante eventMapper.
  * Soporta búsqueda, categoría y orden ascendente/descendente.
+=======
+ * Home / Catálogo general de eventos (Integrante 4 · RF-04), según la guía:
+ * header, buscador + orden, píldoras de categoría, hero destacado y lista
+ * de eventos próximos. Cada tarjeta navega al detalle `/event/[id]`.
+ * Carga reactiva desde almacenamiento persistente para reflejar cambios del Admin y compras.
+>>>>>>> origin/feat/implGeneral
  */
 export default function HomeCatalogScreen() {
   const theme = useTheme();
   const eventia = useEventiaTheme();
+  const [events, setEvents] = useState<EventItem[]>(EVENTS);
+  const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('Todos');
   const [ascending, setAscending] = useState(true);
@@ -31,6 +50,7 @@ export default function HomeCatalogScreen() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchEvents = useCallback(async () => {
+<<<<<<< HEAD
     setIsLoading(true);
     try {
       const data = await eventService.getEvents({
@@ -51,20 +71,57 @@ export default function HomeCatalogScreen() {
     const normalized = query.trim().toLowerCase();
     const matches = allEvents.filter((event) => {
       const matchesCategory = category === 'Todos' || event.category === category;
+=======
+    try {
+      const data = await eventService.getEvents();
+      setEvents(data);
+    } catch (e) {
+      console.warn('[HomeCatalog] Error al cargar eventos:', e);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchEvents();
+    }, [fetchEvents])
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchEvents();
+  };
+
+  const featured = useMemo(() => events.filter((event) => event.featured), [events]);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    const matches = events.filter((event) => {
+      const matchesCategory = matchCategory(event.category, category);
+      const title = (event.title ?? '').toLowerCase();
+      const venue = (event.venue ?? (event as any).location ?? '').toLowerCase();
+      const city = (event.city ?? '').toLowerCase();
+      const organizer = (event.organizer ?? '').toLowerCase();
+>>>>>>> origin/feat/implGeneral
       const matchesQuery =
         normalized.length === 0 ||
-        event.title.toLowerCase().includes(normalized) ||
-        event.venue.toLowerCase().includes(normalized) ||
-        event.city.toLowerCase().includes(normalized) ||
-        event.organizer.toLowerCase().includes(normalized);
+        title.includes(normalized) ||
+        venue.includes(normalized) ||
+        city.includes(normalized) ||
+        organizer.includes(normalized);
       return matchesCategory && matchesQuery;
     });
     return [...matches].sort((a, b) =>
       ascending ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date),
     );
+<<<<<<< HEAD
   }, [allEvents, query, category, ascending]);
 
   const featured = useMemo(() => filtered.filter((event) => event.featured), [filtered]);
+=======
+  }, [events, query, category, ascending]);
+>>>>>>> origin/feat/implGeneral
 
   const showSections = query.trim().length === 0 && category === 'Todos';
   const listData = showSections
@@ -72,9 +129,8 @@ export default function HomeCatalogScreen() {
     : filtered;
 
   return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <View style={styles.searchRow}>
           <View style={[styles.searchBox, { backgroundColor: theme.backgroundElement }]} >
             <TextInput
@@ -110,6 +166,9 @@ export default function HomeCatalogScreen() {
           keyExtractor={(item) => item.id}
           style={styles.flatList}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Eventia.primary]} />
+          }
           ListHeaderComponent={
             showSections ? (
               <View>
@@ -169,59 +228,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.one,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.one,
   },
   searchBox: {
     flex: 1,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 22,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
+    justifyContent: 'center',
   },
   search: {
-    fontSize: 16,
+    fontSize: 14,
+    paddingVertical: 0,
   },
   sortButton: {
-    borderRadius: 12,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
+    height: 44,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.75,
   },
   flatList: {
     flex: 1,
   },
   list: {
     paddingHorizontal: Spacing.three,
-    paddingBottom: Spacing.six,
+    paddingBottom: Spacing.four,
+    gap: Spacing.three,
   },
   sectionTitle: {
     marginTop: Spacing.two,
     marginBottom: Spacing.two,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   sectionRow: {
-    marginTop: Spacing.two,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.three,
     marginBottom: Spacing.two,
   },
   sectionHeading: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
   },
   cardGap: {
     marginBottom: Spacing.three,
   },
   empty: {
+    padding: Spacing.four,
     textAlign: 'center',
-    marginTop: Spacing.five,
   },
 });

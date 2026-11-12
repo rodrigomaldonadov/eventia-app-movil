@@ -1,21 +1,16 @@
 /**
  * Datos mock del catálogo de eventos (Integrante 4: Navegación + Home/Catálogo).
- *
- * Categorías alineadas con la guía visual del catálogo. La forma de
- * `EventItem` sigue la ficha del documento: nombre, fecha, lugar,
- * descripción, organizador, tipos de entrada y precio.
- *
- * TODO/backend: reemplazar por consumo de la API REST (Spring Boot) cuando el
- * backend exponga el endpoint de eventos (RF-04).
+ * Estandarizado con las 3 categorías requeridas: General, VIP y VIP+.
  */
 
 import {
   type EventCategory,
   type TicketType,
+  type TicketTier,
   type EventItem,
 } from '@/types/event.types';
 
-export type { EventCategory, TicketType, EventItem };
+export type { EventCategory, TicketType, TicketTier, EventItem };
 
 export const EVENT_CATEGORIES: EventCategory[] = [
   'Música',
@@ -27,14 +22,61 @@ export const EVENT_CATEGORIES: EventCategory[] = [
 ];
 
 /** Color de portada por categoría (placeholder hasta tener imágenes reales). */
-export const CATEGORY_COVER: Record<EventCategory, string> = {
+export const CATEGORY_COVER: Record<string, string> = {
   Música: '#4F46E5',
+  Conciertos: '#4F46E5',
   'Tech & Startups': '#0B1C30',
+  'Tecnología & Negocios': '#0B1C30',
   Festivales: '#9333EA',
   Gastronomía: '#006E4B',
   Teatro: '#B45309',
+  'Teatro & Artes': '#B45309',
   Networking: '#0369A1',
 };
+
+export function getCategoryCoverColor(category: string): string {
+  return CATEGORY_COVER[category] ?? '#4F46E5';
+}
+
+/**
+ * Coincidencia flexible de categorías para catálogo y filtros,
+ * soportando tildes, minúsculas y nombres equivalentes (p.ej. Música / Conciertos).
+ */
+export function matchCategory(eventCategory: string = '', filter: string = ''): boolean {
+  if (!filter || filter === 'Todos') return true;
+  if (!eventCategory) return false;
+
+  const normalize = (str: string) =>
+    str
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+  const normEvt = normalize(eventCategory);
+  const normFlt = normalize(filter);
+
+  if (normEvt === normFlt) return true;
+
+  const map: Record<string, string[]> = {
+    musica: ['musica', 'conciertos', 'concierto', 'music'],
+    conciertos: ['musica', 'conciertos', 'concierto', 'music'],
+    techstartups: ['techstartups', 'tecnologia', 'tecnologiaynegocios', 'tecnologianegocios', 'tech', 'software'],
+    tecnologiaynegocios: ['techstartups', 'tecnologia', 'tecnologiaynegocios', 'tecnologianegocios', 'tech'],
+    festivales: ['festivales', 'festival', 'openair'],
+    gastronomia: ['gastronomia', 'comida', 'culinario', 'maridaje'],
+    teatro: ['teatro', 'teatroyartes', 'teatroartes', 'artes', 'obra'],
+    teatroyartes: ['teatro', 'teatroyartes', 'teatroartes', 'artes', 'obra'],
+    networking: ['networking', 'negocios', 'emprendimiento', 'conferencias', 'founders'],
+  };
+
+  const aliases = map[normFlt];
+  if (aliases) {
+    return aliases.some(alias => normEvt.includes(alias) || alias.includes(normEvt));
+  }
+
+  return normEvt.includes(normFlt) || normFlt.includes(normEvt);
+}
 
 export const EVENTS: EventItem[] = [
   {
@@ -54,24 +96,27 @@ export const EVENTS: EventItem[] = [
     tickets: [
       {
         id: 'general',
-        name: 'General Pass - Fase 2',
+        name: 'General',
+        tier: 'General',
         price: 120,
-        available: 110,
+        available: 150,
         description: 'Acceso a los 3 escenarios simultáneos, zona de food trucks y lockers generales.',
       },
       {
         id: 'vip',
-        name: 'VIP Lounge Experience',
+        name: 'VIP',
+        tier: 'VIP',
         price: 250,
-        available: 35,
-        description: 'Plataforma elevada premium, barra libre de cortesía y sanitarios climatizados.',
+        available: 45,
+        description: 'Plataforma elevada premium, barra de cortesía y sanitarios climatizados.',
       },
       {
-        id: 'early',
-        name: 'Early Bird Pass',
-        price: 80,
-        available: 0,
-        description: 'Fase inicial con precio especial promocional. Cupos de preventa agotados.',
+        id: 'vip_plus',
+        name: 'VIP+',
+        tier: 'VIP+',
+        price: 380,
+        available: 20,
+        description: 'Pase backstage, Meet & Greet exclusivo con artistas, barra libre total y pack oficial.',
       },
     ],
   },
@@ -92,17 +137,27 @@ export const EVENTS: EventItem[] = [
     tickets: [
       {
         id: 'general',
-        name: 'General Access',
+        name: 'General',
+        tier: 'General',
         price: 95,
         available: 240,
         description: 'Acceso general al predio, zona de barras y escenario principal al aire libre.',
       },
       {
         id: 'vip',
-        name: 'Pase VIP Escenario',
+        name: 'VIP',
+        tier: 'VIP',
         price: 180,
-        available: 4,
-        description: 'Ubicación preferencial frente al lago, fast-pass en ingreso y merchandising conmemorativo.',
+        available: 60,
+        description: 'Ubicación preferencial frente al lago, fast-pass en ingreso y merchandising.',
+      },
+      {
+        id: 'vip_plus',
+        name: 'VIP+',
+        tier: 'VIP+',
+        price: 290,
+        available: 15,
+        description: 'Lounge VIP techado con vista 360°, cócteles ilimitados y estacionamiento privado.',
       },
     ],
   },
@@ -122,10 +177,27 @@ export const EVENTS: EventItem[] = [
     tickets: [
       {
         id: 'general',
-        name: 'Platea General',
+        name: 'General',
+        tier: 'General',
         price: 89,
-        available: 920,
+        available: 120,
         description: 'Ingreso al patio de butacas en orden de llegada y acceso a la feria de vinilos.',
+      },
+      {
+        id: 'vip',
+        name: 'VIP',
+        tier: 'VIP',
+        price: 150,
+        available: 30,
+        description: 'Primeras filas del teatro y firma de autógrafos con bandas en el intermedio.',
+      },
+      {
+        id: 'vip_plus',
+        name: 'VIP+',
+        tier: 'VIP+',
+        price: 220,
+        available: 10,
+        description: 'Asientos de palco exclusivo con atención personalizada y disco de vinilo conmemorativo.',
       },
     ],
   },
@@ -144,11 +216,28 @@ export const EVENTS: EventItem[] = [
     featured: false,
     tickets: [
       {
-        id: 'regular',
-        name: 'Pase Regular Tech',
+        id: 'general',
+        name: 'General',
+        tier: 'General',
         price: 65,
-        available: 18,
-        description: 'Acceso a conferencias magistrales, workshops matutinos y kit de bienvenida del asistente.',
+        available: 100,
+        description: 'Acceso a conferencias magistrales, workshops matutinos y kit de bienvenida.',
+      },
+      {
+        id: 'vip',
+        name: 'VIP',
+        tier: 'VIP',
+        price: 140,
+        available: 40,
+        description: 'Almuerzo de networking con ponentes e inversionistas en la terraza ejecutiva.',
+      },
+      {
+        id: 'vip_plus',
+        name: 'VIP+',
+        tier: 'VIP+',
+        price: 260,
+        available: 12,
+        description: 'Acceso a sesiones 1:1 de mentoría privada con VCs y cena exclusiva de gala.',
       },
     ],
   },
@@ -168,10 +257,27 @@ export const EVENTS: EventItem[] = [
     tickets: [
       {
         id: 'general',
-        name: 'Ticket Degustación',
+        name: 'General',
+        tier: 'General',
         price: 75,
-        available: 0,
+        available: 80,
         description: 'Cata de 5 destilados artesanales y tabla de maridaje gourmet individual.',
+      },
+      {
+        id: 'vip',
+        name: 'VIP',
+        tier: 'VIP',
+        price: 130,
+        available: 25,
+        description: 'Degustación extendida con mixología de autor y mesa reservada frente al show.',
+      },
+      {
+        id: 'vip_plus',
+        name: 'VIP+',
+        tier: 'VIP+',
+        price: 210,
+        available: 8,
+        description: 'Masterclass privada con Master Distiller y botella de colección numerada.',
       },
     ],
   },
@@ -191,10 +297,27 @@ export const EVENTS: EventItem[] = [
     tickets: [
       {
         id: 'general',
-        name: 'Platea y Palco',
+        name: 'General',
+        tier: 'General',
         price: 45,
         available: 130,
-        description: 'Entrada numerada con vista directa al escenario principal.',
+        description: 'Entrada numerada en platea alta con vista directa al escenario principal.',
+      },
+      {
+        id: 'vip',
+        name: 'VIP',
+        tier: 'VIP',
+        price: 90,
+        available: 40,
+        description: 'Butacas preferenciales en platea baja con libreto oficial de la obra.',
+      },
+      {
+        id: 'vip_plus',
+        name: 'VIP+',
+        tier: 'VIP+',
+        price: 160,
+        available: 15,
+        description: 'Palco central privado, copa de espumante de bienvenida y charla con el elenco tras la función.',
       },
     ],
   },
@@ -214,10 +337,27 @@ export const EVENTS: EventItem[] = [
     tickets: [
       {
         id: 'general',
-        name: 'Pase Acceso Networking',
+        name: 'General',
+        tier: 'General',
         price: 30,
-        available: 8,
-        description: 'Acceso a la sesión de pitch, coctel de bienvenida y directorio de contactos.',
+        available: 50,
+        description: 'Acceso a la sesión de pitch, cóctel de bienvenida y directorio de contactos.',
+      },
+      {
+        id: 'vip',
+        name: 'VIP',
+        tier: 'VIP',
+        price: 70,
+        available: 20,
+        description: 'Slot de 3 minutos de pitch asegurado en tarima y acceso al VIP Lounge de inversores.',
+      },
+      {
+        id: 'vip_plus',
+        name: 'VIP+',
+        tier: 'VIP+',
+        price: 120,
+        available: 10,
+        description: 'Reunión privada Speed Dating con Ángeles Inversionistas y mención de marca en el evento.',
       },
     ],
   },
@@ -230,11 +370,13 @@ export function getEventById(id: string | undefined): EventItem | undefined {
 
 /** Precio mínimo entre los tipos de entrada del evento. */
 export function getPriceFrom(event: EventItem): number {
+  if (!event.tickets || event.tickets.length === 0) return 0;
   return Math.min(...event.tickets.map((ticket) => ticket.price));
 }
 
 /** Total de entradas disponibles del evento. */
 export function getTicketsAvailable(event: EventItem): number {
+  if (!event.tickets || event.tickets.length === 0) return 0;
   return event.tickets.reduce((total, ticket) => total + ticket.available, 0);
 }
 

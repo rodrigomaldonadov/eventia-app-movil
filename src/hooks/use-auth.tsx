@@ -2,6 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+export type UserRole = 'USER' | 'ORGANIZER' | 'CLIENT' | 'ADMIN';
+export type UserStatus = 'ACTIVE' | 'INACTIVE';
+
 /**
  * Preferencias configurables por el usuario dentro de su perfil.
  */
@@ -23,7 +26,10 @@ export interface User {
   dni?: string;
   documentType?: string;
   documentNumber?: string;
+  role?: UserRole;
+  status?: UserStatus;
   avatarUrl?: string;
+  phoneNumber?: string;
   preferences?: UserPreferences;
 }
 
@@ -40,6 +46,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   login: (userData: User, token?: string, remember?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   /** Función en español para actualizar los datos del usuario en la sesión */
@@ -60,8 +67,9 @@ function isSession(value: unknown): value is Session {
     typeof session.token === 'string' &&
     session.token.length > 0 &&
     !!session.user &&
-    typeof session.user.fullName === 'string' &&
-    typeof session.user.email === 'string'
+    typeof session.user === 'object' &&
+    typeof session.user.email === 'string' &&
+    session.user.email.length > 0
   );
 }
 
@@ -70,6 +78,7 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   isLoading: true,
   isAuthenticated: false,
+  isAdmin: false,
   login: async () => { },
   logout: async () => { },
   actualizarUsuario: async () => { },
@@ -88,6 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (stored) {
           const parsed: unknown = JSON.parse(stored);
           if (isSession(parsed)) {
+            if (!parsed.user.fullName || !parsed.user.fullName.trim()) {
+              parsed.user.fullName = parsed.user.email.split('@')[0];
+            }
             if (active) setSession(parsed);
           } else {
             await AsyncStorage.removeItem(STORAGE_KEY);
@@ -163,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token: session?.token ?? null,
         isLoading,
         isAuthenticated: !!session,
+        isAdmin: session?.user?.role === 'ADMIN' || session?.user?.role === 'ORGANIZER',
         login,
         logout,
         actualizarUsuario,

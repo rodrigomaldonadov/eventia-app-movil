@@ -20,6 +20,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useRegisterForm } from '@/hooks/use-register-form';
+import api from '@/services/api';
 import { registerUser, RegisterError, type RegisterUserData } from '@/services/user-storage';
 import type { RegisterForm } from '@/types/register.types';
 import { validateForm } from '@/utils/register-validation';
@@ -82,11 +83,64 @@ export default function RegisterScreen() {
         email: form.values.email,
         password: form.values.password,
       };
+      // 1. Intentar registrar en el Backend Spring Boot
+      try {
+        const response = await api.post('/auth/register', {
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          email: userData.email,
+          password: userData.password,
+          documentType: userData.documentType,
+          documentNumber: userData.documentNumber,
+          phoneNumber: userData.phoneNumber,
+          termsAccepted: true,
+        });
+
+        if (response.data && response.data.success && response.data.user) {
+          const u = response.data.user;
+          await login(
+            {
+              id: String(u.id),
+              fullName: u.fullName || `${userData.firstName} ${userData.lastName}`.trim(),
+              email: u.email,
+              role: (u.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'),
+              status: (u.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE'),
+              phoneNumber: u.phoneNumber || userData.phoneNumber,
+            },
+            response.data.token
+          );
+          if (returnUrl) {
+            router.replace(returnUrl as never);
+          } else {
+            router.replace('/');
+          }
+          return;
+        }
+      } catch (backendError: any) {
+        if (backendError?.response?.data?.message) {
+          const msg: string = backendError.response.data.message;
+          if (msg.toLowerCase().includes('correo') || msg.toLowerCase().includes('email')) {
+            form.setFieldError('email', msg);
+            setServerError(msg);
+            return;
+          }
+          if (msg.toLowerCase().includes('documento') || msg.toLowerCase().includes('dni')) {
+            form.setFieldError('documentNumber', msg);
+            setServerError(msg);
+            return;
+          }
+        }
+      }
+
+      // 2. Fallback de registro local si no hubo backend
       const registered = await registerUser(userData);
       await login({
         id: registered.id,
         fullName: `${registered.firstName} ${registered.lastName}`.trim(),
         email: registered.email,
+        role: registered.role || 'CLIENT',
+        status: registered.status || 'ACTIVE',
+        phoneNumber: registered.phoneNumber,
       });
       if (returnUrl) {
         router.replace(returnUrl as never);

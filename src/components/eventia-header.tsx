@@ -23,7 +23,7 @@ export function EventiaHeader() {
   const eventia = useEventiaTheme();
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isLoading, logout } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading, logout } = useAuth();
   const { totalTickets } = useCart();
   const isAuthScreen = pathname === '/login' || pathname === '/register';
   const [open, setOpen] = useState(false);
@@ -39,12 +39,17 @@ export function EventiaHeader() {
     router.replace('/');
   };
 
-  const menuItems = [
-    { label: 'Explorar', href: '/' },
-    { label: 'Mis Tickets', href: '/tickets' },
-    { label: 'Mi Carrito', href: '/cart' },
-    { label: 'Mi Perfil', href: '/profile' },
-  ];
+  const menuItems = isAdmin
+    ? [
+        { label: '⚡ Panel Administrador', href: '/admin/dashboard' },
+        { label: 'Explorar', href: '/' },
+      ]
+    : [
+        { label: 'Explorar', href: '/' },
+        { label: 'Mis Tickets', href: '/tickets' },
+        { label: 'Mi Carrito', href: '/cart' },
+        { label: 'Mi Perfil', href: '/profile' },
+      ];
 
   const isCurrentRoute = (href: string) => {
     if (href === '/') {
@@ -74,25 +79,27 @@ export function EventiaHeader() {
 
         {/* Bloque derecho ordenado: Carrito, Iniciar y Registrarse */}
         <View style={styles.rightCluster}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Ir al carrito de compras"
-            onPress={() => router.push('/cart' as never)}
-            hitSlop={8}
-            style={({ pressed }) => [
-              styles.cartButton,
-              { backgroundColor: theme.backgroundElement },
-              pressed && styles.pressed,
-            ]}>
-            <Ionicons name="cart-outline" size={19} color={theme.text} />
-            {totalTickets > 0 && (
-              <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>
-                  {totalTickets > 99 ? '99+' : totalTickets}
-                </Text>
-              </View>
-            )}
-          </Pressable>
+          {!isAdmin && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Ir al carrito de compras"
+              onPress={() => router.push('/cart' as never)}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.cartButton,
+                { backgroundColor: theme.backgroundElement },
+                pressed && styles.pressed,
+              ]}>
+              <Ionicons name="cart-outline" size={19} color={theme.text} />
+              {totalTickets > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>
+                    {totalTickets > 99 ? '99+' : totalTickets}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          )}
 
           {isLoading ? (
             <View style={styles.rightPlaceholder} />

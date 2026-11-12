@@ -36,6 +36,10 @@ export default function RootLayout() {
             <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
             <Stack.Screen name="register" options={{ title: 'Crear cuenta' }} />
             <Stack.Screen name="mis-eventos" options={{ title: 'Mis Eventos', header: undefined }} />
+            <Stack.Screen name="admin/dashboard" options={{ title: 'Dashboard Administrativo' }} />
+            <Stack.Screen name="admin/events" options={{ title: 'Gestión de Eventos' }} />
+            <Stack.Screen name="admin/event-form" options={{ title: 'Configurar Evento' }} />
+            <Stack.Screen name="admin/users" options={{ title: 'Gestión de Usuarios' }} />
           </Stack>
         </ThemeProvider>
       </CartProvider>

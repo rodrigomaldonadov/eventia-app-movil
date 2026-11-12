@@ -2,8 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 
 import type { DocumentType, RegisterForm } from '@/types/register.types';
+import type { UserRole, UserStatus } from '@/hooks/use-auth';
 
-const STORAGE_KEY = '@eventia/users';
+const STORAGE_KEY = '@eventia/users_v2';
 
 /**
  * Representación pública de un usuario guardado (sin contraseña ni salt).
@@ -17,6 +18,8 @@ export interface StoredUserPublic {
   birthDate: string;
   phoneNumber: string;
   email: string;
+  role: UserRole;
+  status: UserStatus;
   createdAt: string;
 }
 
@@ -31,7 +34,9 @@ interface StoredUserInternal extends StoredUserPublic {
 /**
  * Datos requeridos para registrar un usuario.
  */
-export type RegisterUserData = Omit<RegisterForm, 'confirmPassword'>;
+export type RegisterUserData = Omit<RegisterForm, 'confirmPassword'> & {
+  role?: UserRole;
+};
 
 /**
  * Error personalizado para fallos de registro (duplicados de correo o documento).
@@ -65,30 +70,6 @@ function withWriteLock<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Lee la lista interna de usuarios de AsyncStorage.
- * Maneja JSON corrupto devolviendo un arreglo vacío y registrando el error.
- */
-async function readUsersInternal(): Promise<StoredUserInternal[]> {
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed as StoredUserInternal[];
-  } catch (error) {
-    console.error('[UserStorage Error]: Fallo al leer o parsear AsyncStorage', error);
-    return [];
-  }
-}
-
-/**
- * Guarda la lista interna de usuarios en AsyncStorage.
- */
-async function saveUsersInternal(users: StoredUserInternal[]): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-}
-
-/**
  * Genera el hash SHA-256 de (salt + password).
  */
 async function hashPassword(password: string, salt: string): Promise<string> {
@@ -104,9 +85,118 @@ function sanitizeUser(user: StoredUserInternal): StoredUserPublic {
 }
 
 /**
+ * Genera usuarios iniciales predeterminados (Admin y Clientes) si el storage está vacío.
+ */
+async function generateInitialSeedUsers(): Promise<StoredUserInternal[]> {
+  const adminSalt = Crypto.randomUUID();
+  const adminHash = await hashPassword('Admin123!', adminSalt);
+
+  const clientSalt = Crypto.randomUUID();
+  const clientHash = await hashPassword('Cliente123!', clientSalt);
+
+  const danielaSalt = Crypto.randomUUID();
+  const danielaHash = await hashPassword('Daniela123!', danielaSalt);
+
+  return [
+    {
+      id: 'usr-admin-master',
+      firstName: 'Admin',
+      lastName: 'Eventia',
+      documentType: 'DNI',
+      documentNumber: '00000001',
+      birthDate: '01/01/1990',
+      phoneNumber: '+51 900 000 001',
+      email: 'admin@eventia.io',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      passwordHash: adminHash,
+      salt: adminSalt,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'usr-client-demo',
+      firstName: 'Cliente',
+      lastName: 'Demo',
+      documentType: 'DNI',
+      documentNumber: '74829103',
+      birthDate: '14/08/1998',
+      phoneNumber: '+51 987 654 321',
+      email: 'cliente@eventia.io',
+      role: 'CLIENT',
+      status: 'ACTIVE',
+      passwordHash: clientHash,
+      salt: clientSalt,
+      createdAt: '2025-01-05T00:00:00.000Z',
+    },
+    {
+      id: 'usr-daniela-morales',
+      firstName: 'Daniela',
+      lastName: 'Morales',
+      documentType: 'DNI',
+      documentNumber: '74829104',
+      birthDate: '14/08/1998',
+      phoneNumber: '+51 987 654 322',
+      email: 'daniela@eventia.io',
+      role: 'CLIENT',
+      status: 'ACTIVE',
+      passwordHash: danielaHash,
+      salt: danielaSalt,
+      createdAt: '2025-01-06T00:00:00.000Z',
+    },
+  ];
+}
+
+/**
+ * Lee la lista interna de usuarios de AsyncStorage.
+ */
+async function readUsersInternal(): Promise<StoredUserInternal[]> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      const initialUsers = await generateInitialSeedUsers();
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(initialUsers));
+      return initialUsers;
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      const initialUsers = await generateInitialSeedUsers();
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(initialUsers));
+      return initialUsers;
+    }
+    // Asegurar compatibilidad si se migraron usuarios anteriores sin role o status
+    let modified = false;
+    const migrated = parsed.map((u: any) => {
+      let changed = false;
+      if (!u.role) {
+        u.role = u.email === 'admin@eventia.io' ? 'ADMIN' : 'CLIENT';
+        changed = true;
+      }
+      if (!u.status) {
+        u.status = 'ACTIVE';
+        changed = true;
+      }
+      if (changed) modified = true;
+      return u;
+    });
+    if (modified) {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+    }
+    return migrated as StoredUserInternal[];
+  } catch (error) {
+    console.error('[UserStorage Error]: Fallo al leer o parsear AsyncStorage', error);
+    return [];
+  }
+}
+
+/**
+ * Guarda la lista interna de usuarios en AsyncStorage.
+ */
+async function saveUsersInternal(users: StoredUserInternal[]): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+}
+
+/**
  * Registra un nuevo usuario en almacenamiento local.
- * Valida duplicados de correo y documento (normalizados).
- * Lanza `RegisterError` si existen duplicados.
  */
 export async function registerUser(data: RegisterUserData): Promise<StoredUserPublic> {
   return withWriteLock(async () => {
@@ -150,6 +240,8 @@ export async function registerUser(data: RegisterUserData): Promise<StoredUserPu
       birthDate: data.birthDate.trim(),
       phoneNumber: data.phoneNumber.trim(),
       email: normEmail,
+      role: data.role || 'CLIENT',
+      status: 'ACTIVE',
       passwordHash,
       salt,
       createdAt: new Date().toISOString(),
@@ -192,7 +284,6 @@ export async function findUserByDocument(
 /**
  * Verifica las credenciales de un usuario (email y contraseña).
  * Retorna el objeto `StoredUserPublic` sin contraseña si coinciden, o `null` si no.
- * (Para uso del Integrante 1 en el flujo de Login).
  */
 export async function verifyCredentials(
   email: string,
@@ -216,7 +307,6 @@ interface ResetRequest {
   attempts: number;
 }
 
-// Simulación local: el código se muestra en pantalla porque no hay servicio de correo.
 const resetRequests = new Map<string, ResetRequest>();
 
 export async function requestPasswordReset(email: string): Promise<string | null> {
@@ -229,6 +319,11 @@ export async function requestPasswordReset(email: string): Promise<string | null
   const code = String(value % 1_000_000).padStart(6, '0');
   resetRequests.set(normEmail, { code, expiresAt: Date.now() + 10 * 60_000, attempts: 0 });
   return code;
+}
+
+export function setLocalResetCode(email: string, code: string): void {
+  const normEmail = email.trim().toLowerCase();
+  resetRequests.set(normEmail, { code, expiresAt: Date.now() + 15 * 60_000, attempts: 0 });
 }
 
 export async function resetPassword(email: string, code: string, newPassword: string): Promise<void> {
@@ -259,10 +354,66 @@ export async function resetPassword(email: string, code: string, newPassword: st
 }
 
 /**
- * Devuelve la lista completa de usuarios públicos (solo para pruebas/verificación).
- * NUNCA incluye passwordHash ni salt.
+ * Restablece directamente la contraseña para sincronizar almacenamiento local
+ */
+export async function directResetPassword(email: string, newPassword: string): Promise<void> {
+  const normEmail = email.trim().toLowerCase();
+  await withWriteLock(async () => {
+    const users = await readUsersInternal();
+    const user = users.find((item) => item.email.toLowerCase() === normEmail);
+    if (user) {
+      user.salt = Crypto.randomUUID();
+      user.passwordHash = await hashPassword(newPassword, user.salt);
+      await saveUsersInternal(users);
+    }
+  });
+}
+
+/**
+ * Devuelve la lista completa de usuarios públicos (para módulo de Administración).
  */
 export async function getAllUsers(): Promise<StoredUserPublic[]> {
   const users = await readUsersInternal();
   return users.map(sanitizeUser);
+}
+
+/**
+ * Modifica el rol de un usuario (CLIENT o ADMIN) - Módulo 3.1.
+ */
+export async function updateUserRole(userId: string, newRole: UserRole): Promise<StoredUserPublic> {
+  return withWriteLock(async () => {
+    const users = await readUsersInternal();
+    const user = users.find((u) => u.id === userId);
+    if (!user) throw new Error('Usuario no encontrado');
+    user.role = newRole;
+    await saveUsersInternal(users);
+    return sanitizeUser(user);
+  });
+}
+
+/**
+ * Activa, desactiva o restaura un usuario (Soft Delete & Restauración) - Módulo 3.1.
+ */
+export async function toggleUserStatus(userId: string, newStatus: UserStatus): Promise<StoredUserPublic> {
+  return withWriteLock(async () => {
+    const users = await readUsersInternal();
+    const user = users.find((u) => u.id === userId);
+    if (!user) throw new Error('Usuario no encontrado');
+    user.status = newStatus;
+    await saveUsersInternal(users);
+    return sanitizeUser(user);
+  });
+}
+
+/**
+ * Elimina definitivamente un usuario (opcional para el admin).
+ */
+export async function deleteUser(userId: string): Promise<boolean> {
+  return withWriteLock(async () => {
+    const users = await readUsersInternal();
+    const filtered = users.filter((u) => u.id !== userId);
+    if (filtered.length === users.length) return false;
+    await saveUsersInternal(filtered);
+    return true;
+  });
 }

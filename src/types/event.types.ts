@@ -66,11 +66,18 @@ export type EventCategory =
   | 'Teatro'
   | 'Networking';
 
+export type TicketTier = 'General' | 'VIP' | 'VIP+';
+
 export interface TicketType {
   id: string;
   name: string;
+  tier?: TicketTier;
   price: number;
   available: number;
+  total?: number;
+  totalCapacity?: number;
+  availableCapacity?: number;
+  sold?: number;
   description?: string;
 }
 
@@ -86,8 +93,13 @@ export interface EventItem {
   organizer: string;
   featured: boolean;
   imageUrl?: string;
+  bannerUrl?: string;
   edition?: string;
   active?: boolean;
   status?: string;
+  capacity?: number;
+  hasSoldTickets?: boolean;
+  soldTicketsCount?: number;
+  totalRevenue?: number;
   tickets: TicketType[];
 }

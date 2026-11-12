@@ -111,18 +111,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+<<<<<<< HEAD
   // Agrega un tipo de entrada individual respetando el stock y máximo por compra
   const addTicket = (event: EventDetailDto, ticket: TicketTypeDto, quantity: number) => {
     if (quantity <= 0 || ticket.availableCapacity <= 0) return;
 
     const maxAllowed = Math.min(ticket.availableCapacity, ticket.maxPerPurchase ?? 10);
     const itemId = `${event.id}_${ticket.id}`;
+=======
+  // Agrega una entrada específica
+  const addTicket = (event: EventItem, ticket: TicketType, quantity: number) => {
+    if (quantity <= 0) return;
+    const ticketIdStr = String(ticket.id);
+    const itemId = `${event.id}_${ticketIdStr}`;
+    const maxAvail = ticket.available ?? ticket.availableCapacity ?? ticket.totalCapacity ?? ticket.total ?? 100;
+>>>>>>> origin/feat/implGeneral
     const existingIndex = items.findIndex((i) => i.id === itemId);
 
     if (existingIndex >= 0) {
       const updated = [...items];
       const existing = updated[existingIndex];
       if (existing) {
+<<<<<<< HEAD
         const nextQty = Math.min(existing.quantity + quantity, maxAllowed);
         updated[existingIndex] = {
           ...existing,
@@ -132,6 +142,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           available: ticket.availableCapacity,
           maxPerPurchase: ticket.maxPerPurchase ?? 10,
         };
+=======
+        const nextQty = Math.min(existing.quantity + quantity, maxAvail);
+        updated[existingIndex] = { ...existing, quantity: nextQty };
+>>>>>>> origin/feat/implGeneral
         saveCart(updated);
       }
     } else {
@@ -140,19 +154,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         eventId: String(event.id),
         eventTitle: event.title,
         eventDate: event.date,
+<<<<<<< HEAD
         eventLocation: event.location,
         eventVenue: event.location,
         bannerUrl: event.bannerUrl,
         imageUrl: event.bannerUrl ?? undefined,
         ticketTypeId: ticket.id,
         ticketId: String(ticket.id),
+=======
+        eventVenue: event.venue || (event as any).location || 'Lugar por confirmar',
+        imageUrl: event.imageUrl || event.bannerUrl,
+        ticketId: ticketIdStr,
+>>>>>>> origin/feat/implGeneral
         ticketName: ticket.name,
         zone: ticket.zone,
         price: ticket.price,
+<<<<<<< HEAD
         quantity: Math.min(quantity, maxAllowed),
         availableCapacity: ticket.availableCapacity,
         available: ticket.availableCapacity,
         maxPerPurchase: ticket.maxPerPurchase ?? 10,
+=======
+        quantity: Math.min(quantity, maxAvail),
+        available: maxAvail,
+>>>>>>> origin/feat/implGeneral
       };
       saveCart([...items, newItem]);
     }
@@ -168,17 +193,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     for (const [rawTicketId, qty] of Object.entries(quantities)) {
       if (qty <= 0) continue;
+<<<<<<< HEAD
       const ticketTypeId = Number(rawTicketId);
       const ticket = ticketTypes.find((t) => t.id === ticketTypeId);
       if (!ticket || ticket.availableCapacity <= 0) continue;
 
       const maxAllowed = Math.min(ticket.availableCapacity, ticket.maxPerPurchase ?? 10);
       const itemId = `${event.id}_${ticket.id}`;
+=======
+      const ticket = event.tickets.find(
+        (t) =>
+          String(t.id) === String(ticketId) ||
+          (t.tier && String(t.tier).toLowerCase() === String(ticketId).toLowerCase()) ||
+          (t.name && String(t.name).toLowerCase() === String(ticketId).toLowerCase())
+      );
+      if (!ticket) continue;
+
+      const ticketIdStr = String(ticket.id);
+      const itemId = `${event.id}_${ticketIdStr}`;
+      const maxAvail = ticket.available ?? ticket.availableCapacity ?? ticket.totalCapacity ?? ticket.total ?? 100;
+>>>>>>> origin/feat/implGeneral
       const existingIndex = updated.findIndex((i) => i.id === itemId);
 
       if (existingIndex >= 0) {
         const existing = updated[existingIndex];
         if (existing) {
+<<<<<<< HEAD
           const nextQty = Math.min(existing.quantity + qty, maxAllowed);
           updated[existingIndex] = {
             ...existing,
@@ -196,6 +236,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             available: ticket.availableCapacity,
             maxPerPurchase: ticket.maxPerPurchase ?? 10,
           };
+=======
+          const nextQty = Math.min(existing.quantity + qty, maxAvail);
+          updated[existingIndex] = { ...existing, quantity: nextQty };
+>>>>>>> origin/feat/implGeneral
         }
       } else {
         updated.push({
@@ -203,19 +247,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           eventId: String(event.id),
           eventTitle: event.title,
           eventDate: event.date,
+<<<<<<< HEAD
           eventLocation: event.location,
           eventVenue: event.location,
           bannerUrl: event.bannerUrl,
           imageUrl: event.bannerUrl ?? undefined,
           ticketTypeId: ticket.id,
           ticketId: String(ticket.id),
+=======
+          eventVenue: event.venue || (event as any).location || 'Lugar por confirmar',
+          imageUrl: event.imageUrl || event.bannerUrl,
+          ticketId: ticketIdStr,
+>>>>>>> origin/feat/implGeneral
           ticketName: ticket.name,
           zone: ticket.zone,
           price: ticket.price,
+<<<<<<< HEAD
           quantity: Math.min(qty, maxAllowed),
           availableCapacity: ticket.availableCapacity,
           available: ticket.availableCapacity,
           maxPerPurchase: ticket.maxPerPurchase ?? 10,
+=======
+          quantity: Math.min(qty, maxAvail),
+          available: maxAvail,
+>>>>>>> origin/feat/implGeneral
         });
       }
     }
@@ -232,9 +287,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const updated = items.map((item) => {
       if (item.id === itemId) {
+<<<<<<< HEAD
         const stock = item.availableCapacity ?? item.available;
         const maxPerTicket = item.maxPerPurchase ?? 10;
         const validQuantity = Math.min(newQuantity, Math.max(1, Math.min(stock, maxPerTicket)));
+=======
+        const maxAvail = item.available || 999;
+        const validQuantity = Math.min(newQuantity, maxAvail);
+>>>>>>> origin/feat/implGeneral
         return { ...item, quantity: validQuantity };
       }
       return item;

@@ -20,6 +20,8 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
+import { orderService } from '@/features/orders/services/orderService';
+import type { Order } from '@/features/orders/types/order.types';
 import {
   actualizarAvatarUsuario,
   actualizarContrasenaUsuario,
@@ -36,7 +38,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const tema = useTheme();
   const temaEventia = useEventiaTheme();
-  const { user, isAuthenticated, isLoading, logout, actualizarUsuario } = useAuth();
+  const { user, isAuthenticated, isAdmin, isLoading, logout, actualizarUsuario } = useAuth();
 
   // Modales
   const [modalDatosPersonalesVisible, setModalDatosPersonalesVisible] = useState(false);
@@ -46,17 +48,18 @@ export default function ProfileScreen() {
 
   // Datos del perfil y preferencias
   const [datosPersonales, setDatosPersonales] = useState<DatosPersonalesCompletos>({
-    nombreCompleto: user?.fullName || 'Daniela Morales',
+    nombreCompleto: user?.fullName || 'Usuario Eventia',
     tipoDocumento: 'DNI',
-    numeroDocumento: '74829103',
-    telefono: '+51 987 654 321',
+    numeroDocumento: '',
+    telefono: user?.phoneNumber || '',
     fechaNacimiento: '14/08/1998',
-    correo: user?.email || 'daniela@eventia.io',
+    correo: user?.email || '',
   });
 
   const [preferencias, setPreferencias] = useState<PreferenciasPerfil>(
     PREFERENCIAS_POR_DEFECTO,
   );
+  const [orders, setOrders] = useState<Order[]>([]);
 
   // Redirigir al login si no hay sesión activa
   useEffect(() => {
@@ -65,13 +68,13 @@ export default function ProfileScreen() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Cargar datos y preferencias del usuario autenticado
+  // Cargar datos, preferencias y órdenes reales del usuario autenticado
   useEffect(() => {
     async function cargarInformacionUsuario() {
       if (user?.email) {
         const datos = await obtenerDatosPersonalesUsuario(
           user.email,
-          user.fullName || 'Daniela Morales',
+          user.fullName || 'Usuario Eventia',
         );
         setDatosPersonales(datos);
 
@@ -81,6 +84,13 @@ export default function ProfileScreen() {
 
         const pref = await obtenerPreferenciasUsuario(user.email);
         setPreferencias(pref);
+
+        try {
+          const misOrdenes = await orderService.getOrders(user.email);
+          setOrders(misOrdenes);
+        } catch {
+          // fallback
+        }
       }
     }
     cargarInformacionUsuario();
@@ -101,7 +111,7 @@ export default function ProfileScreen() {
 
   // Actualización de datos
   const manejarActualizarCorreo = async (nuevoCorreo: string) => {
-    const correoActual = user?.email || 'daniela@eventia.io';
+    const correoActual = user?.email || '';
     const resultado = await actualizarCorreoUsuario(correoActual, nuevoCorreo);
 
     if (resultado.exito) {
@@ -113,7 +123,7 @@ export default function ProfileScreen() {
   };
 
   const manejarActualizarContrasena = async (nuevaContrasena: string) => {
-    const correoActual = user?.email || 'daniela@eventia.io';
+    const correoActual = user?.email || '';
     return await actualizarContrasenaUsuario(correoActual, nuevaContrasena);
   };
 
@@ -126,7 +136,7 @@ export default function ProfileScreen() {
 
   const manejarActualizarPreferencias = async (nuevasPreferencias: PreferenciasPerfil) => {
     setPreferencias(nuevasPreferencias);
-    const correoActual = user?.email || 'daniela@eventia.io';
+    const correoActual = user?.email || '';
     await guardarPreferenciasUsuario(correoActual, nuevasPreferencias);
   };
 
@@ -146,6 +156,21 @@ export default function ProfileScreen() {
   if (isLoading || !isAuthenticated) {
     return null;
   }
+
+  // Cálculos reales basados en órdenes del usuario
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcomingOrders = orders
+    .filter((o) => {
+      const d = new Date(o.eventDate);
+      return isNaN(d.getTime()) || d >= today;
+    })
+    .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+
+  const totalTicketsActivos = upcomingOrders.reduce((sum, o) => sum + (o.totalTickets || 1), 0);
+  const totalEventosComprados = orders.length;
+  const proximoEvento = upcomingOrders[0];
 
   const textoCategorias =
     preferencias.categoriasFavoritas && preferencias.categoriasFavoritas.length > 0
@@ -170,13 +195,46 @@ export default function ProfileScreen() {
             alPresionarCambiarFoto={abrirModalFoto}
           />
 
-          <FilaEstadisticasPerfil eventosAsistidos={4} ticketsActivos={2} />
-
-          <BannerProximoEvento
-            nombreEvento="Sónar Festival • Barcelona"
-            fechaHora="Viernes, 18 Julio • 20:30 hrs"
-            recinto="Parc del Fòrum"
+          <FilaEstadisticasPerfil
+            eventosAsistidos={totalEventosComprados}
+            ticketsActivos={totalTicketsActivos}
           />
+
+          {proximoEvento ? (
+            <BannerProximoEvento
+              nombreEvento={proximoEvento.eventTitle}
+              fechaHora={`${proximoEvento.eventDate} ${proximoEvento.eventTime ? `• ${proximoEvento.eventTime}` : ''}`}
+              recinto={proximoEvento.eventVenue}
+            />
+          ) : null}
+
+          {isAdmin && (
+            <ProfileSectionCard title="Administración Eventia">
+              <ProfileOptionRow
+                icon="speedometer-outline"
+                title="Dashboard de Métricas"
+                subtitle="Ingresos, tickets vendidos y stock"
+                valueText="Métricas"
+                showDivider
+                onPress={() => router.push('/admin/dashboard' as never)}
+              />
+              <ProfileOptionRow
+                icon="calendar-outline"
+                title="Gestión de Eventos"
+                subtitle="Crear, editar, eliminar y entradas"
+                valueText="Catálogo"
+                showDivider
+                onPress={() => router.push('/admin/events' as never)}
+              />
+              <ProfileOptionRow
+                icon="people-outline"
+                title="Gestión de Usuarios"
+                subtitle="Roles, accesos y restauración"
+                valueText="Usuarios"
+                onPress={() => router.push('/admin/users' as never)}
+              />
+            </ProfileSectionCard>
+          )}
 
           <ProfileSectionCard title="Cuenta y Seguridad">
             <ProfileOptionRow
@@ -191,14 +249,7 @@ export default function ProfileScreen() {
               icon="lock-closed-outline"
               title="Cambiar contraseña"
               subtitle="Seguridad de la cuenta"
-              showDivider
               onPress={abrirModalCambiarContrasena}
-            />
-            <ProfileOptionRow
-              icon="card-outline"
-              title="Métodos de pago"
-              valueText="Visa •••• 4092"
-              onPress={() => { }}
             />
           </ProfileSectionCard>
 

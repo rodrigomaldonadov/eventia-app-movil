@@ -4,8 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Android network configuration:
- * - In Android Emulator: '10.0.2.2' points to the development machine's localhost.
- * - On a Physical Android Device: Replace with your machine's local Wi-Fi IP (e.g., '192.168.1.50:3000').
+ * - In Android Emulator: '10.0.2.2:8080' points to the development machine's localhost.
+ * - On a Physical Android Device: Replace with your machine's local Wi-Fi IP (e.g., '192.168.1.50:8080').
  * - For Production: Define EXPO_PUBLIC_API_URL in a .env file.
  */
 const getBaseUrl = (): string => {
@@ -33,7 +33,7 @@ export const getApiRootUrl = (): string => getBaseUrl().replace(/\/api\/?$/, '')
 
 export const api = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 10000,
+  timeout: 30000, // 30s para soportar arranque en frío de Render si el contenedor estaba inactivo
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',

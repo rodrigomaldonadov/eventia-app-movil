@@ -15,8 +15,13 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useCart } from '@/hooks/use-cart';
 import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
+<<<<<<< HEAD
 import { findUserByEmail } from '@/services/user-storage';
 import { authService } from '@/services/authService';
+import { obtenerDatosPersonalesUsuario } from '@/services/profile-service';
+=======
+import { obtenerDatosPersonalesUsuario } from '@/services/profile-service';
+>>>>>>> origin/feat/implGeneral
 
 import { CheckoutStepper } from '@/features/checkout/components/CheckoutStepper';
 import { ReservationTimer } from '@/features/checkout/components/ReservationTimer';
@@ -31,6 +36,7 @@ import { StickyCheckoutDock } from '@/features/checkout/components/StickyCheckou
 import type {
   BuyerInfo,
   CardDetails,
+  DocumentType,
   PaymentMethodId,
 } from '@/features/checkout/types/checkout.types';
 
@@ -60,32 +66,38 @@ export default function CheckoutScreen() {
     cardNumber: '4532 8821 9910 8910',
     expiry: '11/28',
     cvv: '842',
+<<<<<<< HEAD
     cardHolder: user?.fullName
       ? user.fullName.toUpperCase()
       : (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.toUpperCase().trim() : 'TITULAR DE TARJETA'),
+=======
+    cardHolder: user?.fullName
+      ? user.fullName.toUpperCase()
+      : (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.toUpperCase().trim() : 'TITULAR DE TARJETA'),
+>>>>>>> origin/feat/implGeneral
   });
 
   const [termsAccepted, setTermsAccepted] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Precargar datos del usuario desde almacenamiento si existen
+  // Precargar datos del usuario desde Spring Boot / MySQL
   useEffect(() => {
     if (user?.email) {
-      findUserByEmail(user.email)
-        .then((storedUser) => {
-          if (storedUser) {
+      obtenerDatosPersonalesUsuario(user.email, user.fullName || '')
+        .then((profile) => {
+          if (profile) {
             setBuyer((prev) => ({
               ...prev,
-              fullName: `${storedUser.firstName} ${storedUser.lastName}`.trim() || prev.fullName,
-              email: storedUser.email || prev.email,
-              documentType: storedUser.documentType || 'DNI',
-              documentNumber: storedUser.documentNumber || prev.documentNumber,
-              phone: storedUser.phoneNumber || prev.phone,
+              fullName: profile.nombreCompleto || prev.fullName,
+              email: profile.correo || prev.email,
+              documentType: (profile.tipoDocumento === 'CE' || profile.tipoDocumento === 'Pasaporte' ? profile.tipoDocumento : 'DNI') as DocumentType,
+              documentNumber: profile.numeroDocumento || prev.documentNumber,
+              phone: profile.telefono || prev.phone,
             }));
-            if (storedUser.firstName) {
+            if (profile.nombreCompleto) {
               setCardDetails((prev) => ({
                 ...prev,
-                cardHolder: `${storedUser.firstName} ${storedUser.lastName}`.toUpperCase(),
+                cardHolder: profile.nombreCompleto.toUpperCase(),
               }));
             }
           }
