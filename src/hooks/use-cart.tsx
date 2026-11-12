@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { eventService } from '@/services/eventService';
 import type { CartItem, CheckoutOrderPayload } from '@/types/cart.types';
-import type { EventItem, TicketType } from '@/types/event.types';
+import type { EventDetailDto, TicketTypeDto } from '@/types/event.types';
+
+interface StockCheckOutcome {
+  valid: boolean;
+  message?: string;
+}
 
 interface CartContextType {
   items: CartItem[];
@@ -9,15 +15,21 @@ interface CartContextType {
   subtotal: number;
   igv: number;
   total: number;
-  addTicket: (event: EventItem, ticket: TicketType, quantity: number) => void;
-  addEventSelection: (event: EventItem, quantities: Record<string, number>) => void;
+  isValidatingStock: boolean;
+  addTicket: (event: EventDetailDto, ticket: TicketTypeDto, quantity: number) => void;
+  addEventSelection: (
+    event: EventDetailDto,
+    ticketTypes: TicketTypeDto[],
+    quantities: Record<number, number>,
+  ) => void;
   updateQuantity: (itemId: string, newQuantity: number) => void;
   removeItem: (itemId: string) => void;
   clearCart: () => void;
+  validateCartStock: () => Promise<StockCheckOutcome>;
   generateOrderPayload: () => CheckoutOrderPayload;
 }
 
-const STORAGE_KEY = '@eventia_cart_v1';
+const STORAGE_KEY = '@eventia_cart_v2';
 
 let memoryCart: CartItem[] = [];
 
@@ -27,14 +39,17 @@ const CartContext = createContext<CartContextType>({
   subtotal: 0,
   igv: 0,
   total: 0,
+  isValidatingStock: false,
   addTicket: () => {},
   addEventSelection: () => {},
   updateQuantity: () => {},
   removeItem: () => {},
   clearCart: () => {},
+  validateCartStock: async () => ({ valid: true }),
   generateOrderPayload: () => ({
     orderId: '',
     items: [],
+    orderItems: [],
     subtotal: 0,
     igv: 0,
     total: 0,
@@ -42,10 +57,28 @@ const CartContext = createContext<CartContextType>({
   }),
 });
 
+// Verifica que el item recuperado de AsyncStorage tenga IDs numéricos válidos
+function isValidCartItem(item: unknown): item is CartItem {
+  if (!item || typeof item !== 'object') return false;
+  const candidate = item as Record<string, unknown>;
+  const eventIdNum = Number(candidate.eventId);
+  const ticketIdNum = Number(candidate.ticketTypeId ?? candidate.ticketId);
+  return (
+    typeof candidate.id === 'string' &&
+    Number.isInteger(eventIdNum) &&
+    eventIdNum > 0 &&
+    Number.isInteger(ticketIdNum) &&
+    ticketIdNum > 0 &&
+    typeof candidate.quantity === 'number' &&
+    candidate.quantity > 0
+  );
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isValidatingStock, setIsValidatingStock] = useState(false);
 
-  // Carga inicial del carrito
+  // Carga el carrito guardado en AsyncStorage al iniciar la app
   useEffect(() => {
     const loadCart = async () => {
       try {
@@ -53,33 +86,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            setItems(parsed);
-            memoryCart = parsed;
+            const validItems = parsed.filter(isValidCartItem);
+            setItems(validItems);
+            memoryCart = validItems;
           }
         } else if (memoryCart.length > 0) {
           setItems(memoryCart);
         }
       } catch {
-        // ignore
+        // Ignorar si falla la lectura inicial
       }
     };
     loadCart();
   }, []);
 
-  // Guarda en almacenamiento cada vez que cambia el carrito
-  const saveCart = async (newItems: CartItem[]) => {
+  // Guarda la lista actualizada del carrito en memoria y AsyncStorage
+  const saveCart = useCallback(async (newItems: CartItem[]) => {
     setItems(newItems);
     memoryCart = newItems;
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
     } catch {
-      // ignore
+      // Ignorar si falla la escritura local
     }
-  };
+  }, []);
 
-  // Agrega una entrada específica
-  const addTicket = (event: EventItem, ticket: TicketType, quantity: number) => {
-    if (quantity <= 0) return;
+  // Agrega un tipo de entrada individual respetando el stock y máximo por compra
+  const addTicket = (event: EventDetailDto, ticket: TicketTypeDto, quantity: number) => {
+    if (quantity <= 0 || ticket.availableCapacity <= 0) return;
+
+    const maxAllowed = Math.min(ticket.availableCapacity, ticket.maxPerPurchase ?? 10);
     const itemId = `${event.id}_${ticket.id}`;
     const existingIndex = items.findIndex((i) => i.id === itemId);
 
@@ -87,59 +123,99 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const updated = [...items];
       const existing = updated[existingIndex];
       if (existing) {
-        const nextQty = Math.min(existing.quantity + quantity, ticket.available);
-        updated[existingIndex] = { ...existing, quantity: nextQty };
+        const nextQty = Math.min(existing.quantity + quantity, maxAllowed);
+        updated[existingIndex] = {
+          ...existing,
+          price: ticket.price,
+          quantity: nextQty,
+          availableCapacity: ticket.availableCapacity,
+          available: ticket.availableCapacity,
+          maxPerPurchase: ticket.maxPerPurchase ?? 10,
+        };
         saveCart(updated);
       }
     } else {
       const newItem: CartItem = {
         id: itemId,
-        eventId: event.id,
+        eventId: String(event.id),
         eventTitle: event.title,
         eventDate: event.date,
-        eventVenue: event.venue,
-        imageUrl: event.imageUrl,
-        ticketId: ticket.id,
+        eventLocation: event.location,
+        eventVenue: event.location,
+        bannerUrl: event.bannerUrl,
+        imageUrl: event.bannerUrl ?? undefined,
+        ticketTypeId: ticket.id,
+        ticketId: String(ticket.id),
         ticketName: ticket.name,
+        zone: ticket.zone,
         price: ticket.price,
-        quantity: Math.min(quantity, ticket.available),
-        available: ticket.available,
+        quantity: Math.min(quantity, maxAllowed),
+        availableCapacity: ticket.availableCapacity,
+        available: ticket.availableCapacity,
+        maxPerPurchase: ticket.maxPerPurchase ?? 10,
       };
       saveCart([...items, newItem]);
     }
   };
 
-  // Agrega múltiples entradas seleccionadas en una pantalla de evento
-  const addEventSelection = (event: EventItem, quantities: Record<string, number>) => {
+  // Agrega las entradas seleccionadas desde la vista de detalle del evento
+  const addEventSelection = (
+    event: EventDetailDto,
+    ticketTypes: TicketTypeDto[],
+    quantities: Record<number, number>,
+  ) => {
     const updated = [...items];
 
-    for (const [ticketId, qty] of Object.entries(quantities)) {
+    for (const [rawTicketId, qty] of Object.entries(quantities)) {
       if (qty <= 0) continue;
-      const ticket = event.tickets.find((t) => t.id === ticketId);
-      if (!ticket) continue;
+      const ticketTypeId = Number(rawTicketId);
+      const ticket = ticketTypes.find((t) => t.id === ticketTypeId);
+      if (!ticket || ticket.availableCapacity <= 0) continue;
 
+      const maxAllowed = Math.min(ticket.availableCapacity, ticket.maxPerPurchase ?? 10);
       const itemId = `${event.id}_${ticket.id}`;
       const existingIndex = updated.findIndex((i) => i.id === itemId);
 
       if (existingIndex >= 0) {
         const existing = updated[existingIndex];
         if (existing) {
-          const nextQty = Math.min(existing.quantity + qty, ticket.available);
-          updated[existingIndex] = { ...existing, quantity: nextQty };
+          const nextQty = Math.min(existing.quantity + qty, maxAllowed);
+          updated[existingIndex] = {
+            ...existing,
+            eventTitle: event.title,
+            eventDate: event.date,
+            eventLocation: event.location,
+            eventVenue: event.location,
+            bannerUrl: event.bannerUrl,
+            imageUrl: event.bannerUrl ?? undefined,
+            ticketName: ticket.name,
+            zone: ticket.zone,
+            price: ticket.price,
+            quantity: nextQty,
+            availableCapacity: ticket.availableCapacity,
+            available: ticket.availableCapacity,
+            maxPerPurchase: ticket.maxPerPurchase ?? 10,
+          };
         }
       } else {
         updated.push({
           id: itemId,
-          eventId: event.id,
+          eventId: String(event.id),
           eventTitle: event.title,
           eventDate: event.date,
-          eventVenue: event.venue,
-          imageUrl: event.imageUrl,
-          ticketId: ticket.id,
+          eventLocation: event.location,
+          eventVenue: event.location,
+          bannerUrl: event.bannerUrl,
+          imageUrl: event.bannerUrl ?? undefined,
+          ticketTypeId: ticket.id,
+          ticketId: String(ticket.id),
           ticketName: ticket.name,
+          zone: ticket.zone,
           price: ticket.price,
-          quantity: Math.min(qty, ticket.available),
-          available: ticket.available,
+          quantity: Math.min(qty, maxAllowed),
+          availableCapacity: ticket.availableCapacity,
+          available: ticket.availableCapacity,
+          maxPerPurchase: ticket.maxPerPurchase ?? 10,
         });
       }
     }
@@ -147,7 +223,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     saveCart(updated);
   };
 
-  // Modifica la cantidad de una entrada en el carrito
+  // Actualiza la cantidad de un item en el carrito sin superar el stock ni el límite por compra
   const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       removeItem(itemId);
@@ -156,7 +232,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const updated = items.map((item) => {
       if (item.id === itemId) {
-        const validQuantity = Math.min(newQuantity, item.available);
+        const stock = item.availableCapacity ?? item.available;
+        const maxPerTicket = item.maxPerPurchase ?? 10;
+        const validQuantity = Math.min(newQuantity, Math.max(1, Math.min(stock, maxPerTicket)));
         return { ...item, quantity: validQuantity };
       }
       return item;
@@ -165,29 +243,113 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     saveCart(updated);
   };
 
-  // Elimina una entrada del carrito
+  // Elimina un item del carrito
   const removeItem = (itemId: string) => {
     const filtered = items.filter((item) => item.id !== itemId);
     saveCart(filtered);
   };
 
-  // Vacía todo el carrito
+  // Vacía el carrito completo
   const clearCart = () => {
     saveCart([]);
   };
 
-  // Cálculos de subtotales, IGV y total
-  const totalTickets = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const igv = Math.round(subtotal * 0.18 * 100) / 100; // IGV 18%
-  const total = Math.round((subtotal + igv) * 100) / 100;
+  // Consulta el stock real en el backend para todos los eventos del carrito
+  const validateCartStock = useCallback(async (): Promise<StockCheckOutcome> => {
+    if (items.length === 0) {
+      return { valid: false, message: 'Tu carrito está vacío.' };
+    }
 
-  // Genera el payload de la orden con el desglose de items y totales
+    setIsValidatingStock(true);
+    try {
+      const uniqueEventIds = Array.from(new Set(items.map((i) => Number(i.eventId))));
+      const ticketsByEvent = new Map<number, TicketTypeDto[]>();
+
+      await Promise.all(
+        uniqueEventIds.map(async (eventId) => {
+          const remoteTickets = await eventService.getTicketTypesByEvent(eventId);
+          ticketsByEvent.set(eventId, remoteTickets);
+        }),
+      );
+
+      let stockError: string | undefined;
+      const syncedItems: CartItem[] = [];
+
+      for (const item of items) {
+        const numericEventId = Number(item.eventId);
+        const numericTicketTypeId = Number(item.ticketTypeId ?? item.ticketId);
+        const eventTickets = ticketsByEvent.get(numericEventId) ?? [];
+        const liveTicket = eventTickets.find((t) => t.id === numericTicketTypeId);
+
+        if (!liveTicket || liveTicket.status === 'paused') {
+          stockError = `La entrada "${item.ticketName}" de "${item.eventTitle}" ya no está disponible.`;
+          syncedItems.push({
+            ...item,
+            availableCapacity: 0,
+            available: 0,
+          });
+          continue;
+        }
+
+        const liveAvailable = liveTicket.availableCapacity ?? 0;
+        const liveMaxPerPurchase = liveTicket.maxPerPurchase ?? 10;
+
+        if (liveAvailable <= 0) {
+          stockError = `La entrada "${item.ticketName}" (${item.eventTitle}) se ha agotado.`;
+        } else if (item.quantity > liveAvailable) {
+          stockError = `Stock insuficiente para "${item.ticketName}": seleccionaste ${item.quantity}, pero solo quedan ${liveAvailable} disponibles.`;
+        } else if (item.quantity > liveMaxPerPurchase) {
+          stockError = `Solo se pueden comprar hasta ${liveMaxPerPurchase} entradas de "${item.ticketName}".`;
+        }
+
+        syncedItems.push({
+          ...item,
+          ticketName: liveTicket.name,
+          zone: liveTicket.zone,
+          price: liveTicket.price,
+          availableCapacity: liveAvailable,
+          available: liveAvailable,
+          maxPerPurchase: liveMaxPerPurchase,
+        });
+      }
+
+      const totalCartQty = syncedItems.reduce((sum, i) => sum + i.quantity, 0);
+      if (!stockError && totalCartQty > 10) {
+        stockError = 'Solo se pueden comprar hasta 10 entradas por compra.';
+      }
+
+      await saveCart(syncedItems);
+
+      if (stockError) {
+        return { valid: false, message: stockError };
+      }
+
+      return { valid: true };
+    } catch {
+      return {
+        valid: false,
+        message: 'No se pudo verificar el stock con el servidor.',
+      };
+    } finally {
+      setIsValidatingStock(false);
+    }
+  }, [items, saveCart]);
+
+  const totalTickets = items.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = Math.round(items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100) / 100;
+  const igv = 0;
+  const total = subtotal;
+
+  // Genera el resumen de la orden listo para el módulo de compras
   const generateOrderPayload = (): CheckoutOrderPayload => {
     const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
     return {
       orderId,
       items,
+      orderItems: items.map((item) => ({
+        ticketTypeId: Number(item.ticketTypeId ?? item.ticketId),
+        quantity: item.quantity,
+      })),
       subtotal,
       igv,
       total,
@@ -203,11 +365,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         subtotal,
         igv,
         total,
+        isValidatingStock,
         addTicket,
         addEventSelection,
         updateQuantity,
         removeItem,
         clearCart,
+        validateCartStock,
         generateOrderPayload,
       }}>
       {children}
