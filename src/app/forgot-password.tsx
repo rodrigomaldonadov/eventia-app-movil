@@ -28,6 +28,8 @@ export default function ForgotPasswordScreen() {
   const [demoCode, setDemoCode] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -160,41 +162,69 @@ export default function ForgotPasswordScreen() {
                         accessibilityLabel="Código de recuperación"
                       />
                       <Text style={[styles.label, { color: theme.text }]}>Nueva contraseña</Text>
-                      <TextInput
+                      <View
                         style={[
-                          styles.input,
+                          styles.inputWrapper,
                           {
                             backgroundColor: theme.backgroundElement,
-                            color: theme.text,
                             borderColor: isDark ? '#374151' : '#CBD5E1',
                           },
-                        ]}
-                        value={password}
-                        onChangeText={(value) => { setPassword(value); setError(null); }}
-                        placeholder="Mínimo 8 caracteres, letras y números"
-                        placeholderTextColor={theme.textSecondary}
-                        secureTextEntry
-                        autoCapitalize="none"
-                        accessibilityLabel="Nueva contraseña"
-                      />
+                        ]}>
+                        <TextInput
+                          style={[styles.inputInner, { color: theme.text }]}
+                          value={password}
+                          onChangeText={(value) => { setPassword(value); setError(null); }}
+                          placeholder="Mínimo 8 caracteres, letras y números"
+                          placeholderTextColor={theme.textSecondary}
+                          secureTextEntry={!showPassword}
+                          autoCapitalize="none"
+                          accessibilityLabel="Nueva contraseña"
+                        />
+                        <Pressable
+                          onPress={() => setShowPassword((v) => !v)}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+                          <Ionicons
+                            name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                            size={18}
+                            color={theme.textSecondary}
+                          />
+                        </Pressable>
+                      </View>
                       <Text style={[styles.label, { color: theme.text }]}>Confirmar contraseña</Text>
-                      <TextInput
+                      <View
                         style={[
-                          styles.input,
+                          styles.inputWrapper,
                           {
                             backgroundColor: theme.backgroundElement,
-                            color: theme.text,
                             borderColor: isDark ? '#374151' : '#CBD5E1',
                           },
-                        ]}
-                        value={confirmPassword}
-                        onChangeText={(value) => { setConfirmPassword(value); setError(null); }}
-                        placeholder="Repite tu contraseña"
-                        placeholderTextColor={theme.textSecondary}
-                        secureTextEntry
-                        autoCapitalize="none"
-                        accessibilityLabel="Confirmar contraseña"
-                      />
+                        ]}>
+                        <TextInput
+                          style={[styles.inputInner, { color: theme.text }]}
+                          value={confirmPassword}
+                          onChangeText={(value) => { setConfirmPassword(value); setError(null); }}
+                          placeholder="Repite tu contraseña"
+                          placeholderTextColor={theme.textSecondary}
+                          secureTextEntry={!showConfirmPassword}
+                          autoCapitalize="none"
+                          accessibilityLabel="Confirmar contraseña"
+                        />
+                        <Pressable
+                          onPress={() => setShowConfirmPassword((v) => !v)}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={
+                            showConfirmPassword ? 'Ocultar confirmación' : 'Mostrar confirmación'
+                          }>
+                          <Ionicons
+                            name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                            size={18}
+                            color={theme.textSecondary}
+                          />
+                        </Pressable>
+                      </View>
                     </>
                   ) : null}
 
@@ -242,6 +272,8 @@ const styles = StyleSheet.create({
   form: { gap: 8 },
   label: { color: INK, fontSize: 12, fontWeight: '600', marginTop: 5 },
   input: { height: 46, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E8EAF2', borderRadius: 11, paddingHorizontal: 13, fontSize: 13, color: INK },
+  inputWrapper: { height: 46, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 11, paddingHorizontal: 13 },
+  inputInner: { flex: 1, height: '100%', paddingVertical: 0, fontSize: 13 },
   disabledInput: { backgroundColor: '#F0F1F7', color: '#626A7F' },
   demoBox: { borderRadius: 12, backgroundColor: '#EDEBFF', padding: 13, marginVertical: 8 },
   demoTitle: { fontSize: 12, fontWeight: '700', color: '#3525CD', marginBottom: 3 },
