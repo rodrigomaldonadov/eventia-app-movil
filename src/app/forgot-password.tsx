@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
+import { authService } from '@/services/authService';
 import { requestPasswordReset, resetPassword } from '@/services/user-storage';
 import { normalizeEmail, validateEmail, validateNewPassword } from '@/utils/auth-validation';
 import { useColorScheme } from 'react-native';
@@ -14,6 +15,7 @@ import { useColorScheme } from 'react-native';
 const PRIMARY = '#4F46E5';
 const INK = '#091A33';
 const ERROR = '#B42318';
+const isBackendConfigured = Boolean(process.env.EXPO_PUBLIC_API_URL);
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -37,14 +39,25 @@ export default function ForgotPasswordScreen() {
     setError(null);
     setLoading(true);
     try {
-      const nextCode = await requestPasswordReset(normalizeEmail(email));
+      const normalized = normalizeEmail(email);
+
+      if (isBackendConfigured) {
+        const response = await authService.requestPasswordReset(normalized);
+        setDemoCode(response.code);
+        return;
+      }
+
+      const nextCode = await requestPasswordReset(normalized);
       if (!nextCode) {
         setError('No hay una cuenta local con ese correo. Regístrate primero.');
         return;
       }
       setDemoCode(nextCode);
-    } catch {
-      setError('No pudimos generar el código. Intenta de nuevo.');
+    } catch (caught) {
+      setError(
+        authService.getErrorMessage(caught) ||
+          'No pudimos generar el código. Intenta de nuevo.',
+      );
     } finally {
       setLoading(false);
     }
@@ -59,11 +72,21 @@ export default function ForgotPasswordScreen() {
     setError(null);
     setLoading(true);
     try {
-      await resetPassword(normalizeEmail(email), code, password);
+      const normalized = normalizeEmail(email);
+
+      if (isBackendConfigured) {
+        await authService.resetPassword(normalized, code.trim(), password);
+      } else {
+        await resetPassword(normalized, code, password);
+      }
+
       await logout();
       setDone(true);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'No pudimos cambiar la contraseña.');
+      setError(
+        authService.getErrorMessage(caught) ||
+          (caught instanceof Error ? caught.message : 'No pudimos cambiar la contraseña.'),
+      );
     } finally {
       setLoading(false);
     }
@@ -115,7 +138,7 @@ export default function ForgotPasswordScreen() {
                       <View style={[styles.demoBox, { backgroundColor: isDark ? '#1E1B4B' : '#EDEBFF' }]}>
                         <Text style={styles.demoTitle}>Modo demostración</Text>
                         <Text style={[styles.demoText, { color: isDark ? '#C7D2FE' : '#403B68' }]}>
-                          No hay servicio de correo configurado. Tu código local es <Text style={styles.demoCode}>{demoCode}</Text>. Vence en 10 minutos.
+                          No hay servicio de correo configurado. Tu código de recuperación es <Text style={styles.demoCode}>{demoCode}</Text>. Vence en 10 minutos.
                         </Text>
                       </View>
                       <Text style={[styles.label, { color: theme.text }]}>Código de recuperación</Text>

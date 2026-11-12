@@ -52,6 +52,14 @@ export interface RegisterResponse {
   token?: string;
 }
 
+/** Respuesta de POST /auth/forgot-password (código de demostración). */
+export interface ForgotPasswordResponse {
+  email: string;
+  code: string;
+  expiresInMinutes: number;
+  message: string;
+}
+
 export const authService = {
   /**
    * Autentica al usuario contra el backend y devuelve el token JWT.
@@ -61,6 +69,29 @@ export const authService = {
       baseURL: getApiRootUrl(),
     });
     return response.data;
+  },
+
+  /**
+   * Solicita un código de recuperación de contraseña.
+   */
+  async requestPasswordReset(email: string): Promise<ForgotPasswordResponse> {
+    const response = await api.post<ForgotPasswordResponse>(
+      '/auth/forgot-password',
+      { email },
+      { baseURL: getApiRootUrl() },
+    );
+    return response.data;
+  },
+
+  /**
+   * Restablece la contraseña usando el código de recuperación.
+   */
+  async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+    await api.post(
+      '/auth/reset-password',
+      { email, code, newPassword },
+      { baseURL: getApiRootUrl() },
+    );
   },
 
   /**
