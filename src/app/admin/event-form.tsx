@@ -81,6 +81,15 @@ export default function AdminEventFormScreen() {
   // Estado de validaciones y errores por campo
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const clearError = (field: string) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   // Estado para el modal de Calendario
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [calendarYear, setCalendarYear] = useState(() => {
@@ -122,7 +131,7 @@ export default function AdminEventFormScreen() {
 
   // Autoformato inteligente de hora (HH:MM)
   const handleTimeChange = (text: string) => {
-    setErrors((prev) => ({ ...prev, time: '' }));
+    clearError('time');
     // Eliminar todo lo que no sea dígito
     const clean = text.replace(/\D/g, '').slice(0, 4);
 
@@ -236,7 +245,7 @@ export default function AdminEventFormScreen() {
     const d = String(day).padStart(2, '0');
     const fullDate = `${calendarYear}-${m}-${d}`;
     setDate(fullDate);
-    setErrors((prev) => ({ ...prev, date: '' }));
+    clearError('date');
     setCalendarVisible(false);
   };
 
@@ -391,7 +400,11 @@ export default function AdminEventFormScreen() {
         });
         Alert.alert('Éxito', '¡Nuevo evento publicado exitosamente en MySQL!');
       }
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/admin/events' as any);
+      }
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'No se pudo guardar el evento en el backend.');
     } finally {
@@ -473,10 +486,10 @@ export default function AdminEventFormScreen() {
                 value={title}
                 onChangeText={(t) => {
                   setTitle(t);
-                  if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
+                  clearError('title');
                 }}
               />
-              {errors.title && (
+              {Boolean(errors.title) && (
                 <Text style={styles.errorText}>
                   <Ionicons name="alert-circle" size={12} color="#EF4444" /> {errors.title}
                 </Text>
@@ -587,7 +600,7 @@ export default function AdminEventFormScreen() {
                     {date || 'Seleccionar fecha'}
                   </Text>
                 </TouchableOpacity>
-                {errors.date && (
+                {Boolean(errors.date) && (
                   <Text style={styles.errorText}>
                     <Ionicons name="alert-circle" size={11} color="#EF4444" /> {errors.date}
                   </Text>
@@ -619,7 +632,7 @@ export default function AdminEventFormScreen() {
                     onChangeText={handleTimeChange}
                   />
                 </View>
-                {errors.time && (
+                {Boolean(errors.time) && (
                   <Text style={styles.errorText}>
                     <Ionicons name="alert-circle" size={11} color="#EF4444" /> {errors.time}
                   </Text>
@@ -647,7 +660,7 @@ export default function AdminEventFormScreen() {
                       ]}
                       onPress={() => {
                         setTime(h);
-                        setErrors((prev) => ({ ...prev, time: '' }));
+                        clearError('time');
                       }}>
                       <Text
                         style={[
@@ -677,10 +690,10 @@ export default function AdminEventFormScreen() {
                   value={venue}
                   onChangeText={(t) => {
                     setVenue(t);
-                    if (errors.venue) setErrors((prev) => ({ ...prev, venue: '' }));
+                    clearError('venue');
                   }}
                 />
-                {errors.venue && (
+                {Boolean(errors.venue) && (
                   <Text style={styles.errorText}>
                     <Ionicons name="alert-circle" size={12} color="#EF4444" /> {errors.venue}
                   </Text>
@@ -728,10 +741,10 @@ export default function AdminEventFormScreen() {
                 value={description}
                 onChangeText={(t) => {
                   setDescription(t);
-                  if (errors.description) setErrors((prev) => ({ ...prev, description: '' }));
+                  clearError('description');
                 }}
               />
-              {errors.description && (
+              {Boolean(errors.description) && (
                 <Text style={styles.errorText}>
                   <Ionicons name="alert-circle" size={12} color="#EF4444" /> {errors.description}
                 </Text>
@@ -777,10 +790,10 @@ export default function AdminEventFormScreen() {
                     value={generalPrice}
                     onChangeText={(t) => {
                       setGeneralPrice(t);
-                      if (errors.generalPrice) setErrors((prev) => ({ ...prev, generalPrice: '' }));
+                      clearError('generalPrice');
                     }}
                   />
-                  {errors.generalPrice && <Text style={styles.errorText}>{errors.generalPrice}</Text>}
+                  {Boolean(errors.generalPrice) && <Text style={styles.errorText}>{errors.generalPrice}</Text>}
                 </View>
                 <View style={[styles.fieldGroup, { flex: 1 }]}>
                   <Text style={[styles.label, { color: theme.text }]}>Stock Inicial</Text>
@@ -796,10 +809,10 @@ export default function AdminEventFormScreen() {
                     value={generalStock}
                     onChangeText={(t) => {
                       setGeneralStock(t);
-                      if (errors.generalStock) setErrors((prev) => ({ ...prev, generalStock: '' }));
+                      clearError('generalStock');
                     }}
                   />
-                  {errors.generalStock && <Text style={styles.errorText}>{errors.generalStock}</Text>}
+                  {Boolean(errors.generalStock) && <Text style={styles.errorText}>{errors.generalStock}</Text>}
                 </View>
               </View>
             </View>
@@ -825,10 +838,10 @@ export default function AdminEventFormScreen() {
                     value={vipPrice}
                     onChangeText={(t) => {
                       setVipPrice(t);
-                      if (errors.vipPrice) setErrors((prev) => ({ ...prev, vipPrice: '' }));
+                      clearError('vipPrice');
                     }}
                   />
-                  {errors.vipPrice && <Text style={styles.errorText}>{errors.vipPrice}</Text>}
+                  {Boolean(errors.vipPrice) && <Text style={styles.errorText}>{errors.vipPrice}</Text>}
                 </View>
                 <View style={[styles.fieldGroup, { flex: 1 }]}>
                   <Text style={[styles.label, { color: theme.text }]}>Stock Inicial</Text>
@@ -844,10 +857,10 @@ export default function AdminEventFormScreen() {
                     value={vipStock}
                     onChangeText={(t) => {
                       setVipStock(t);
-                      if (errors.vipStock) setErrors((prev) => ({ ...prev, vipStock: '' }));
+                      clearError('vipStock');
                     }}
                   />
-                  {errors.vipStock && <Text style={styles.errorText}>{errors.vipStock}</Text>}
+                  {Boolean(errors.vipStock) && <Text style={styles.errorText}>{errors.vipStock}</Text>}
                 </View>
               </View>
             </View>
@@ -873,10 +886,10 @@ export default function AdminEventFormScreen() {
                     value={vipPlusPrice}
                     onChangeText={(t) => {
                       setVipPlusPrice(t);
-                      if (errors.vipPlusPrice) setErrors((prev) => ({ ...prev, vipPlusPrice: '' }));
+                      clearError('vipPlusPrice');
                     }}
                   />
-                  {errors.vipPlusPrice && <Text style={styles.errorText}>{errors.vipPlusPrice}</Text>}
+                  {Boolean(errors.vipPlusPrice) && <Text style={styles.errorText}>{errors.vipPlusPrice}</Text>}
                 </View>
                 <View style={[styles.fieldGroup, { flex: 1 }]}>
                   <Text style={[styles.label, { color: theme.text }]}>Stock Inicial</Text>
@@ -892,10 +905,10 @@ export default function AdminEventFormScreen() {
                     value={vipPlusStock}
                     onChangeText={(t) => {
                       setVipPlusStock(t);
-                      if (errors.vipPlusStock) setErrors((prev) => ({ ...prev, vipPlusStock: '' }));
+                      clearError('vipPlusStock');
                     }}
                   />
-                  {errors.vipPlusStock && <Text style={styles.errorText}>{errors.vipPlusStock}</Text>}
+                  {Boolean(errors.vipPlusStock) && <Text style={styles.errorText}>{errors.vipPlusStock}</Text>}
                 </View>
               </View>
             </View>

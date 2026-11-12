@@ -21,7 +21,7 @@ const getBaseUrl = (): string => {
 
 export const api = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 10000,
+  timeout: 30000, // 30s para soportar arranque en frío de Render si el contenedor estaba inactivo
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',

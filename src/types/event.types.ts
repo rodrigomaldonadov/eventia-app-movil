@@ -42,6 +42,7 @@ export interface EventItem {
   bannerUrl?: string;
   edition?: string;
   capacity?: number;
+  active?: boolean;
   hasSoldTickets?: boolean;
   soldTicketsCount?: number;
   totalRevenue?: number;

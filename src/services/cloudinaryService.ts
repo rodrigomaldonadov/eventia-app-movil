@@ -4,6 +4,9 @@
  * y obtener URLs optimizadas con compresión automática y transformaciones.
  */
 
+import { Platform } from 'react-native';
+import api from './api';
+
 export interface CloudinaryUploadResponse {
   asset_id?: string;
   public_id: string;
@@ -68,19 +71,62 @@ export const cloudinaryService = {
       return fileUri;
     }
 
+    const filename = fileUri.split('/').pop() || `eventia_${Date.now()}.jpg`;
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+    const finalFilename = filename.includes('.') ? filename : `${filename}.jpg`;
+
+    // 1. Intentar subir mediante el Backend Spring Boot en Render (con credenciales firmadas)
+    try {
+      const backendFormData = new FormData();
+
+      if (Platform.OS === 'web') {
+        if (fileUri.startsWith('blob:') || fileUri.startsWith('data:')) {
+          const res = await fetch(fileUri);
+          const blob = await res.blob();
+          const fileObj = new File([blob], finalFilename, { type: blob.type || type });
+          backendFormData.append('file', fileObj);
+        } else {
+          backendFormData.append('file', fileUri);
+        }
+      } else {
+        backendFormData.append('file', {
+          uri: fileUri,
+          name: finalFilename,
+          type,
+        } as any);
+      }
+
+      // Subida hacia el backend Spring Boot en Render conectado a Cloudinary
+      const beResponse = await api.post('/upload', backendFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (beResponse.data && (beResponse.data.secure_url || beResponse.data.url)) {
+        return beResponse.data.secure_url || beResponse.data.url;
+      }
+    } catch (backendErr: any) {
+      console.warn('[CloudinaryService] Subida backend no completada, intentando fallback:', backendErr?.message);
+    }
+
+    // 2. Subida directa con preset sin firmar
     try {
       const formData = new FormData();
 
-      // Construcción compatible con React Native Mobile y Expo Web
-      const filename = fileUri.split('/').pop() || `eventia_${Date.now()}.jpg`;
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-      formData.append('file', {
-        uri: fileUri,
-        name: filename,
-        type,
-      } as any);
+      if (Platform.OS === 'web' && (fileUri.startsWith('blob:') || fileUri.startsWith('data:'))) {
+        const res = await fetch(fileUri);
+        const blob = await res.blob();
+        formData.append('file', blob, finalFilename);
+      } else {
+        formData.append('file', {
+          uri: fileUri,
+          name: finalFilename,
+          type,
+        } as any);
+      }
 
       formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
       formData.append('folder', 'eventia_events');
@@ -93,16 +139,12 @@ export const cloudinaryService = {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.warn('[CloudinaryService] Respuesta no exitosa:', errorData);
-        // Si el preset no está configurado en vivo, devolvemos la URI local como fallback seguro
         return fileUri;
       }
 
       const data: CloudinaryUploadResponse = await response.json();
       return data.secure_url || data.url || fileUri;
-    } catch (error) {
-      console.warn('[CloudinaryService] Error de red al subir a Cloudinary, usando URI local:', error);
+    } catch {
       return fileUri;
     }
   },

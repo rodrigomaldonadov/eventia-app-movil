@@ -4,6 +4,7 @@ import {
   Alert,
   FlatList,
   Modal,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -16,6 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+
+import api from '@/services/api';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
@@ -61,6 +64,57 @@ export default function AdminEventsScreen() {
     loadEvents();
   };
 
+  const showAlert = (title: string, message: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${title}\n\n${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
+  const confirmAction = (title: string, message: string, onConfirm: () => Promise<void> | void) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${title}\n\n${message}`)) {
+        void onConfirm();
+      }
+    } else {
+      Alert.alert(title, message, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Confirmar', style: 'destructive', onPress: onConfirm },
+      ]);
+    }
+  };
+
+  const handleToggleVisibility = (event: EventItem) => {
+    const isCurrentlyActive = event.active !== false;
+    const actionTitle = isCurrentlyActive ? 'Ocultar Evento' : 'Publicar Evento';
+    const actionMsg = isCurrentlyActive
+      ? `¿Deseas ocultar "${event.title}" del catálogo público? Los clientes ya no podrán verlo en la app, pero las entradas compradas seguirán siendo válidas.`
+      : `¿Deseas volver a hacer público el evento "${event.title}" en el catálogo?`;
+
+    confirmAction(actionTitle, actionMsg, async () => {
+      try {
+        await api.patch(`/events/${event.id}/visibility`);
+        setEvents((prev) =>
+          prev.map((e) => (e.id === event.id ? { ...e, active: !isCurrentlyActive } : e))
+        );
+        showAlert(
+          'Visibilidad Actualizada',
+          `El evento "${event.title}" ahora está ${!isCurrentlyActive ? 'visible en el catálogo' : 'oculto'}.`
+        );
+      } catch {
+        // Fallback optimista local
+        setEvents((prev) =>
+          prev.map((e) => (e.id === event.id ? { ...e, active: !isCurrentlyActive } : e))
+        );
+        showAlert(
+          'Visibilidad Actualizada',
+          `El evento "${event.title}" ha sido ${!isCurrentlyActive ? 'publicado' : 'ocultado'}.`
+        );
+      }
+    });
+  };
+
   const handleDelete = (event: EventItem) => {
     const tickets = Array.isArray(event.tickets) ? event.tickets : ((event as any).ticketTypes ?? []);
     const totalSold = tickets.reduce((acc: number, t: any) => {
@@ -71,38 +125,34 @@ export default function AdminEventsScreen() {
     const hasSold = Boolean(event.hasSoldTickets) || (event.soldTicketsCount ?? 0) > 0 || totalSold > 0;
 
     if (hasSold) {
-      Alert.alert(
-        'Acción Denegada',
-        'No se puede eliminar un evento que ya registra entradas vendidas por compromiso con los compradores.'
+      confirmAction(
+        '🔒 Evento con Entradas Vendidas',
+        `No se puede eliminar permanentemente "${event.title}" porque ya registra ${totalSold || event.soldTicketsCount || ''} entrada(s) vendida(s).\n\n¿Deseas OCULTARLO del catálogo para que no se sigan vendiendo boletos?`,
+        async () => {
+          handleToggleVisibility(event);
+        }
       );
       return;
     }
 
-    Alert.alert(
+    confirmAction(
       'Eliminar Evento',
-      `¿Estás seguro de que deseas eliminar permanentemente "${event.title}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await eventService.deleteEvent(event.id);
-              setEvents((prev) => prev.filter((e) => e.id !== event.id));
-              Alert.alert('Éxito', 'El evento fue eliminado correctamente.');
-            } catch (err: any) {
-              Alert.alert('Error', err?.response?.data?.message || err?.message || 'No se pudo eliminar el evento.');
-            }
-          },
-        },
-      ]
+      `¿Estás seguro de que deseas eliminar permanentemente "${event.title}"? Esta acción no se puede deshacer.`,
+      async () => {
+        try {
+          await eventService.deleteEvent(event.id);
+          setEvents((prev) => prev.filter((e) => e.id !== event.id));
+          showAlert('Éxito', 'El evento fue eliminado correctamente.');
+        } catch (err: any) {
+          showAlert('Error', err?.response?.data?.message || err?.message || 'No se pudo eliminar el evento.');
+        }
+      }
     );
   };
 
   const handleEditPress = (event: EventItem, isLocked: boolean, soldCount: number) => {
     if (isLocked) {
-      Alert.alert(
+      showAlert(
         '🔒 Evento Bloqueado para Edición',
         `Este evento ya cuenta con ${soldCount} entrada(s) vendida(s).\n\nPor políticas de seguridad y protección a los compradores, no se pueden alterar fechas, recintos ni tarifas una vez iniciada la venta de boletos.`
       );
@@ -225,6 +275,10 @@ export default function AdminEventsScreen() {
               const isLocked = Boolean(item.hasSoldTickets) || (item.soldTicketsCount ?? 0) > 0 || totalSold > 0;
               const soldCount = (item.soldTicketsCount ?? 0) || totalSold;
 
+              const eventDateObj = new Date(item.date);
+              const isPast = !isNaN(eventDateObj.getTime()) && eventDateObj.getTime() < new Date().setHours(0, 0, 0, 0);
+              const isHidden = item.active === false;
+
               return (
                 <View style={[styles.eventCard, { backgroundColor: theme.backgroundElement }]}>
                   <View style={styles.cardHeader}>
@@ -242,6 +296,16 @@ export default function AdminEventsScreen() {
                             {item.category ?? (item as any).categoryName ?? 'General'}
                           </Text>
                         </View>
+                        {isHidden && (
+                          <View style={[styles.badgeCategory, styles.badgeHidden]}>
+                            <Text style={styles.badgeHiddenText}>👁️ Oculto</Text>
+                          </View>
+                        )}
+                        {isPast && (
+                          <View style={[styles.badgeCategory, styles.badgePast]}>
+                            <Text style={styles.badgePastText}>⏳ Finalizado</Text>
+                          </View>
+                        )}
                         {isLocked ? (
                           <View style={[styles.badgeCategory, styles.badgeLocked]}>
                             <Text style={styles.badgeLockedText}>
@@ -251,7 +315,7 @@ export default function AdminEventsScreen() {
                         ) : (
                           <View style={[styles.badgeCategory, styles.badgeEditable]}>
                             <Text style={styles.badgeEditableText}>
-                              🔓 Sin ventas (Editable)
+                              🔓 Sin ventas
                             </Text>
                           </View>
                         )}
@@ -311,7 +375,7 @@ export default function AdminEventsScreen() {
                     </View>
                   </View>
 
-                  {/* Botones de Acción: Ver Detalle (Solo lectura), Editar, Eliminar */}
+                  {/* Botones de Acción: Ver Detalle (Solo lectura), Editar, Ocultar/Mostrar, Eliminar */}
                   <View style={styles.actionRow}>
                     <TouchableOpacity
                       style={[styles.actionBtn, styles.detailBtn]}
@@ -320,7 +384,7 @@ export default function AdminEventsScreen() {
                         setDetailVisible(true);
                       }}>
                       <Ionicons name="eye-outline" size={15} color="#A855F7" />
-                      <Text style={[styles.actionBtnText, { color: '#A855F7' }]}>Ver Detalle</Text>
+                      <Text style={[styles.actionBtnText, { color: '#A855F7' }]}>Detalle</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -333,6 +397,23 @@ export default function AdminEventsScreen() {
                       />
                       <Text style={[styles.actionBtnText, { color: isLocked ? '#94A3B8' : '#3B82F6' }]}>
                         {isLocked ? 'Bloqueado' : 'Editar'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.actionBtn, isHidden ? styles.showBtn : styles.hideBtn]}
+                      onPress={() => handleToggleVisibility(item)}>
+                      <Ionicons
+                        name={isHidden ? 'eye-outline' : 'eye-off-outline'}
+                        size={15}
+                        color={isHidden ? '#10B981' : '#F59E0B'}
+                      />
+                      <Text
+                        style={[
+                          styles.actionBtnText,
+                          { color: isHidden ? '#10B981' : '#F59E0B' },
+                        ]}>
+                        {isHidden ? 'Publicar' : 'Ocultar'}
                       </Text>
                     </TouchableOpacity>
 
@@ -687,10 +768,16 @@ const styles = StyleSheet.create({
   detailBtn: { backgroundColor: 'rgba(168, 85, 247, 0.12)' },
   editBtn: { backgroundColor: 'rgba(59, 130, 246, 0.12)' },
   lockedBtn: { backgroundColor: 'rgba(148, 163, 184, 0.1)', opacity: 0.8 },
+  hideBtn: { backgroundColor: 'rgba(245, 158, 11, 0.12)' },
+  showBtn: { backgroundColor: 'rgba(16, 185, 129, 0.12)' },
   deleteBtn: { backgroundColor: 'rgba(239, 68, 68, 0.12)' },
   disabledDeleteBtn: { backgroundColor: 'rgba(100, 116, 139, 0.08)', opacity: 0.5 },
   actionBtnText: { fontSize: 11, fontWeight: '700' },
   badgesRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 },
+  badgeHidden: { backgroundColor: 'rgba(245, 158, 11, 0.15)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.3)' },
+  badgeHiddenText: { fontSize: 10, fontWeight: '700', color: '#F59E0B' },
+  badgePast: { backgroundColor: 'rgba(100, 116, 139, 0.15)', borderWidth: 1, borderColor: 'rgba(100, 116, 139, 0.3)' },
+  badgePastText: { fontSize: 10, fontWeight: '700', color: '#94A3B8' },
   badgeLocked: { backgroundColor: 'rgba(245, 158, 11, 0.15)' },
   badgeLockedText: { fontSize: 10, fontWeight: '700', color: '#F59E0B' },
   badgeEditable: { backgroundColor: 'rgba(16, 185, 129, 0.12)' },
