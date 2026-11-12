@@ -17,13 +17,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { verifyCredentials } from '@/services/user-storage';
-import { normalizeEmail, validateEmail, validatePassword } from '@/utils/auth-validation';
+import { authService } from '@/services/authService';
+import { validateEmail, validatePassword } from '@/utils/auth-validation';
 import { useColorScheme } from 'react-native';
+import { isAxiosError } from 'axios';
 
 const PRIMARY = '#4F46E5';
 const INK = '#091A33';
-const MUTED = '#687086';
 const ERROR = '#B42318';
 
 export default function LoginScreen() {
@@ -35,7 +35,6 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
   const [submitting, setSubmitting] = useState(false);
@@ -52,23 +51,27 @@ export default function LoginScreen() {
     setErrors({});
     setSubmitting(true);
     try {
-      const account = await verifyCredentials(email, password);
-      if (!account) {
-        setErrors({ form: 'Correo o contraseña incorrectos. Intenta de nuevo.' });
-        return;
-      }
-      await login({
-        id: account.id,
-        fullName: `${account.firstName} ${account.lastName}`.trim(),
-        email: account.email,
-      }, undefined, remember);
+      const response = await authService.login({ email: email.trim(), password });
+      await login(
+        {
+          id: String(response.user.id),
+          fullName: response.user.name,
+          email: response.user.email,
+          documentType: response.user.documentType ?? undefined,
+        },
+        response.token,
+      );
       if (returnUrl) {
         router.replace(returnUrl as never);
       } else {
         router.replace('/');
       }
-    } catch {
-      setErrors({ form: 'No pudimos iniciar sesión. Intenta de nuevo.' });
+    } catch (error) {
+      if (isAxiosError(error) && [400, 401, 403].includes(error.response?.status ?? 0)) {
+        setErrors({ form: 'Correo o contraseña incorrectos. Intenta de nuevo.' });
+      } else {
+        setErrors({ form: 'No pudimos iniciar sesión. Intenta de nuevo.' });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -184,30 +187,6 @@ export default function LoginScreen() {
                   {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
                 </View>
 
-                <Pressable
-                  style={styles.rememberRow}
-                  onPress={() => setRemember((value) => !value)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: remember }}>
-                  <View
-                    style={[
-                      styles.checkbox,
-                      { borderColor: isDark ? '#4B5563' : '#9BA3B5' },
-                      remember && styles.checkboxChecked,
-                    ]}>
-                    {remember && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
-                  </View>
-                  <View style={styles.rememberCopy}>
-                    <Text style={[styles.rememberTitle, { color: theme.text }]}>
-                      Mantener sesión iniciada
-                    </Text>
-                    <Text style={[styles.rememberHint, { color: theme.textSecondary }]}>
-                      Conserva tu acceso en este dispositivo
-                    </Text>
-                  </View>
-                  <Ionicons name="lock-closed-outline" size={16} color={theme.text} />
-                </Pressable>
-
                 {errors.form ? (
                   <Text style={styles.formError} accessibilityRole="alert">
                     {errors.form}
@@ -275,12 +254,6 @@ const styles = StyleSheet.create({
   forgotLink: { fontSize: 11, fontWeight: '600', color: '#3929D4', marginBottom: 3 },
   errorText: { color: ERROR, fontSize: 11, marginTop: 4 },
   formError: { color: ERROR, fontSize: 12, textAlign: 'center' },
-  rememberRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, marginBottom: 2, gap: 9, minHeight: 30 },
-  checkbox: { width: 16, height: 16, borderRadius: 5, borderWidth: 1, borderColor: '#9BA3B5', alignItems: 'center', justifyContent: 'center' },
-  checkboxChecked: { backgroundColor: '#3929D4', borderColor: '#3929D4' },
-  rememberCopy: { flex: 1 },
-  rememberTitle: { fontSize: 11, fontWeight: '600', color: INK },
-  rememberHint: { fontSize: 10, color: MUTED },
   submit: { minHeight: 43, borderRadius: 9, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', shadowColor: '#3525CD', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   pressed: { opacity: 0.75 },
   buttonInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
