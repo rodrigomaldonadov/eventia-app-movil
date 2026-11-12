@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -75,9 +76,18 @@ export function EventCard({ event }: EventCardProps) {
             { backgroundColor: CATEGORY_COVER[event.category] },
           ]}
         >
-          <ThemedText type="title" style={styles.coverInitial}>
-            {event.title.charAt(0)}
-          </ThemedText>
+          {event.imageUrl ? (
+            <Image
+              source={{ uri: event.imageUrl }}
+              style={styles.coverImage}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <ThemedText type="title" style={styles.coverInitial}>
+              {event.title.charAt(0)}
+            </ThemedText>
+          )}
 
           <View style={styles.dateBadge}>
             <ThemedText
@@ -220,6 +230,13 @@ const styles = StyleSheet.create({
     height: 176,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  coverImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   coverInitial: {
     color: '#FFFFFF',
