@@ -84,6 +84,13 @@ export default function PaymentScreen() {
         Alert.alert('Vencimiento Inválido', 'Ingresa el formato MM/AA.');
         return;
       }
+      if (!paymentService.isExpiryValid(expiry)) {
+        Alert.alert(
+          'Tarjeta Vencida',
+          'La fecha de vencimiento debe ser igual o posterior al mes actual.',
+        );
+        return;
+      }
       if (cvv.length < 3) {
         Alert.alert('Código CVV', 'Ingresa los 3 dígitos del reverso de tu tarjeta.');
         return;

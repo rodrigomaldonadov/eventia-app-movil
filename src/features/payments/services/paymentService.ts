@@ -41,6 +41,25 @@ export const paymentService = {
   },
 
   /**
+   * Valida que la fecha MM/AA sea un mes real y no esté vencida.
+   * Una tarjeta vence al finalizar el mes indicado.
+   */
+  isExpiryValid(val: string): boolean {
+    const match = /^(\d{2})\/(\d{2})$/.exec(val.trim());
+    if (!match) return false;
+
+    const month = Number(match[1]);
+    const year = 2000 + Number(match[2]);
+    if (month < 1 || month > 12) return false;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    return year > currentYear || (year === currentYear && month >= currentMonth);
+  },
+
+  /**
    * Genera las opciones de cuotas disponibles para Mercado Pago / Tarjetas de crédito.
    */
   calculateInstallments(totalAmount: number): InstallmentOption[] {
