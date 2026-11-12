@@ -18,18 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-<<<<<<< HEAD
 import { authService } from '@/services/authService';
 import { requestPasswordReset, resetPassword } from '@/services/user-storage';
-=======
-import api from '@/services/api';
-import {
-  directResetPassword,
-  requestPasswordReset,
-  resetPassword as resetPasswordLocal,
-  setLocalResetCode,
-} from '@/services/user-storage';
->>>>>>> origin/feat/implGeneral
 import { normalizeEmail, validateEmail, validateNewPassword } from '@/utils/auth-validation';
 
 const PRIMARY = '#4F46E5';
@@ -51,15 +41,8 @@ export default function ForgotPasswordScreen() {
   const [otpCode, setOtpCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-<<<<<<< HEAD
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-=======
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
->>>>>>> origin/feat/implGeneral
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
@@ -80,7 +63,6 @@ export default function ForgotPasswordScreen() {
     const normEmail = normalizeEmail(email);
 
     try {
-<<<<<<< HEAD
       const normalized = normalizeEmail(email);
 
       if (isBackendConfigured) {
@@ -100,45 +82,6 @@ export default function ForgotPasswordScreen() {
         authService.getErrorMessage(caught) ||
           'No pudimos generar el código. Intenta de nuevo.',
       );
-=======
-      let otpDispatched = false;
-
-      // 1. Enviar solicitud al Backend Spring Boot (verificación de existencia + despacho vía Gmail API HTTPS 443)
-      try {
-        const response = await api.post('/auth/forgot-password', { email: normEmail });
-        if (response.data && response.data.success) {
-          otpDispatched = true;
-          if (response.data.otp) {
-            setLocalResetCode(normEmail, response.data.otp);
-          }
-        }
-      } catch (beErr: any) {
-        if (beErr?.response?.status === 404) {
-          setError('No encontramos una cuenta registrada con este correo electrónico.');
-          setLoading(false);
-          return;
-        }
-      }
-
-      // 2. Si el backend no respondió, generar código local en almacenamiento
-      if (!otpDispatched) {
-        const localCode = await requestPasswordReset(normEmail);
-        if (localCode) {
-          otpDispatched = true;
-        }
-      }
-
-      if (!otpDispatched) {
-        setError('No pudimos procesar la solicitud para este correo. Verifica que esté registrado.');
-        return;
-      }
-
-      setInfoMessage('Código OTP enviado exitosamente a tu correo electrónico vía Gmail API.');
-      setStep('OTP');
-    } catch (caught: any) {
-      setError(caught?.message || 'Error al enviar el código. Intenta nuevamente.');
->>>>>>> origin/feat/implGeneral
-    } finally {
       setLoading(false);
     }
   };
