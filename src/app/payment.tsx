@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useCart } from '@/hooks/use-cart';
-import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatPricePEN } from '@/data/events';
 
 import { CreditCardVisual } from '@/features/payments/components/CreditCardVisual';
@@ -49,10 +49,10 @@ export default function PaymentScreen() {
   const dynamicBuyerDni = buyerDni || (user as any)?.dni || user?.documentNumber || '12345678';
 
   const [selectedGateway, setSelectedGateway] = useState<PaymentGatewayType>('card');
-  const [cardNumber, setCardNumber] = useState('4532 8821 9910 8910');
-  const [cardHolder, setCardHolder] = useState(dynamicBuyerName.toUpperCase());
-  const [expiry, setExpiry] = useState('11/28');
-  const [cvv, setCvv] = useState('842');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardHolder, setCardHolder] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
   const [installments, setInstallments] = useState(1);
 
   // Estados de Modal y procesamiento
@@ -68,23 +68,6 @@ export default function PaymentScreen() {
 
   const handleExpiryChange = (text: string) => {
     setExpiry(paymentService.formatExpiry(text));
-  };
-
-  // Simular botón de prueba rápida para el evaluador/profesor
-  const setTestScenario = (type: 'approved' | 'insufficient_funds' | 'expired') => {
-    if (type === 'approved') {
-      setCardNumber('4532 8821 9910 8910');
-      setExpiry('11/28');
-      setCvv('842');
-    } else if (type === 'insufficient_funds') {
-      setCardNumber('4532 8821 9910 0002');
-      setExpiry('11/28');
-      setCvv('123');
-    } else if (type === 'expired') {
-      setCardNumber('4532 8821 9910 0003');
-      setExpiry('01/22');
-      setCvv('456');
-    }
   };
 
   const executeTransaction = async () => {
@@ -142,7 +125,7 @@ export default function PaymentScreen() {
         subtotal: subtotal || (total ? Math.round((total / 1.18) * 100) / 100 : 244),
         igv: igv || (total ? Math.round((total - total / 1.18) * 100) / 100 : 44),
         total: total || 288,
-        buyerName: cardHolder,
+        buyerName: dynamicBuyerName,
         buyerEmail: dynamicBuyerEmail,
         buyerDocument: dynamicBuyerDni,
         paymentMethod: `Mercado Pago (${request.card?.brand?.toUpperCase() || 'Tarjeta'})`,
@@ -188,31 +171,6 @@ export default function PaymentScreen() {
             cardHolder={cardHolder}
             expiry={expiry}
           />
-
-          {/* Sandbox Test Scenarios Toolbar */}
-          <View style={styles.sandboxBox}>
-            <View style={styles.sandboxHeader}>
-              <Ionicons name="flask-outline" size={15} color={Eventia.primary} />
-              <Text style={styles.sandboxTitle}>Simulador Sandbox de Pruebas</Text>
-            </View>
-            <View style={styles.sandboxButtonsRow}>
-              <TouchableOpacity
-                onPress={() => setTestScenario('approved')}
-                style={[styles.sandboxPill, styles.pillSuccess]}>
-                <Text style={styles.pillTextSuccess}>Aprobada (OK)</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setTestScenario('insufficient_funds')}
-                style={[styles.sandboxPill, styles.pillDanger]}>
-                <Text style={styles.pillTextDanger}>Fondos Insuf.</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setTestScenario('expired')}
-                style={[styles.sandboxPill, styles.pillWarn]}>
-                <Text style={styles.pillTextWarn}>Expirada</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
 
           {/* Formulario de Entrada de Tarjeta */}
           <View style={styles.formCard}>
@@ -370,65 +328,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     gap: 16,
-  },
-  sandboxBox: {
-    backgroundColor: '#1E2024',
-    borderRadius: 12,
-    padding: 10,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#2E3135',
-  },
-  sandboxHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  sandboxTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#E2E8F0',
-  },
-  sandboxButtonsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  sandboxPill: {
-    flex: 1,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pillSuccess: {
-    backgroundColor: '#133526',
-    borderWidth: 1,
-    borderColor: '#065F46',
-  },
-  pillTextSuccess: {
-    color: '#34D399',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  pillDanger: {
-    backgroundColor: '#3B1215',
-    borderWidth: 1,
-    borderColor: '#7F1D1D',
-  },
-  pillTextDanger: {
-    color: '#F87171',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  pillWarn: {
-    backgroundColor: '#382811',
-    borderWidth: 1,
-    borderColor: '#78350F',
-  },
-  pillTextWarn: {
-    color: '#FBBF24',
-    fontSize: 11,
-    fontWeight: '700',
   },
   formCard: {
     backgroundColor: '#1E2024',
