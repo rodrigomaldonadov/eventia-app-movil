@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Eventia } from '@/constants/theme';
 
 interface TermsAndSecurityFooterProps {
   termsAccepted: boolean;
@@ -36,14 +35,6 @@ export const TermsAndSecurityFooter: React.FC<TermsAndSecurityFooterProps> = ({
           veracidad de los datos suministrados.
         </Text>
       </TouchableOpacity>
-
-      {/* Sello de Seguridad SSL & PCI-DSS */}
-      <View style={styles.securitySeal}>
-        <Ionicons name="lock-closed" size={16} color="#006E4B" />
-        <Text style={styles.securityText}>
-          Encriptación SSL de 256 bits y certificación PCI-DSS Nivel 1
-        </Text>
-      </View>
     </View>
   );
 };
@@ -82,24 +73,5 @@ const styles = StyleSheet.create({
     color: '#818CF8',
     fontWeight: '700',
     textDecorationLine: 'underline',
-  },
-  securitySeal: {
-    backgroundColor: '#1E2024',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#2E3135',
-  },
-  securityText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#94A3B8',
-    textAlign: 'center',
-    flexShrink: 1,
   },
 });

@@ -11,6 +11,19 @@ export interface AuthUser {
   email: string;
   role: string;
   documentType?: 'DNI' | 'CE' | null;
+  dni?: string | null;
+  cellphone?: string | null;
+}
+
+/** Perfil completo devuelto por GET /auth/me. */
+export interface AuthProfile {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  documentType?: 'DNI' | 'CE' | null;
+  dni?: string | null;
   cellphone?: string | null;
 }
 
@@ -45,6 +58,16 @@ export const authService = {
    */
   async login(data: LoginPayload): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>('/auth/login', data, {
+      baseURL: getApiRootUrl(),
+    });
+    return response.data;
+  },
+
+  /**
+   * Obtiene el perfil del usuario autenticado a partir del JWT.
+   */
+  async me(): Promise<AuthProfile> {
+    const response = await api.get<AuthProfile>('/auth/me', {
       baseURL: getApiRootUrl(),
     });
     return response.data;

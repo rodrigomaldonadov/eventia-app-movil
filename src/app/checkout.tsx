@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useCart } from '@/hooks/use-cart';
 import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
 import { findUserByEmail } from '@/services/user-storage';
+import { authService } from '@/services/authService';
 
 import { CheckoutStepper } from '@/features/checkout/components/CheckoutStepper';
 import { ReservationTimer } from '@/features/checkout/components/ReservationTimer';
@@ -94,6 +95,33 @@ export default function CheckoutScreen() {
         });
     }
   }, [user]);
+
+  // Si la sesión no trae el documento (sesiones antiguas), lo completa desde /auth/me
+  useEffect(() => {
+    if (!user?.email || buyer.documentNumber) return;
+
+    let active = true;
+    authService
+      .me()
+      .then((profile) => {
+        if (!active) return;
+        setBuyer((prev) => ({
+          ...prev,
+          documentNumber: prev.documentNumber || profile.dni || '',
+          documentType:
+            profile.documentType === 'DNI' || profile.documentType === 'CE'
+              ? profile.documentType
+              : prev.documentType,
+        }));
+      })
+      .catch(() => {
+        // El documento también se puede completar manualmente en "Datos del Comprador"
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user?.email, buyer.documentNumber]);
 
   // Evento representativo para el banner
   const primaryItem = items[0];

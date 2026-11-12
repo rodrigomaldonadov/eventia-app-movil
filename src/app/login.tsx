@@ -58,6 +58,8 @@ export default function LoginScreen() {
           fullName: response.user.name,
           email: response.user.email,
           documentType: response.user.documentType ?? undefined,
+          documentNumber: response.user.dni ?? undefined,
+          dni: response.user.dni ?? undefined,
         },
         response.token,
       );
