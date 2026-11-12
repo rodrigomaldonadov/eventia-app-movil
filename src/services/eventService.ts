@@ -5,6 +5,7 @@ import type {
   EventItem,
   EventListResponse,
   TicketAvailabilityResponse,
+  TicketType,
   ValidateTicketsPayload,
   ValidateTicketsResponse,
 } from '@/types/event.types';
@@ -27,6 +28,19 @@ interface BackendPage<T> {
   totalPages: number;
   size: number;
   number: number;
+}
+
+/**
+ * Tarifa devuelta por el backend en GET /api/events/:eventId/ticket-types.
+ */
+interface BackendTicketTypeDto {
+  id: number | string;
+  name: string;
+  zone?: string | null;
+  price: number;
+  totalCapacity: number;
+  availableCapacity: number;
+  status: string;
 }
 
 /**
@@ -81,8 +95,8 @@ export const eventService = {
   },
 
   /**
-   * Obtiene el detalle de un evento por su ID.
-   * Endpoint: GET /api/events/:id
+   * Obtiene el detalle de un evento por su ID junto con sus tarifas.
+   * Endpoints: GET /api/events/:id + GET /api/events/:id/ticket-types
    */
   async getEventById(id: string): Promise<EventItem | null> {
     if (!isBackendConfigured) {
@@ -91,9 +105,32 @@ export const eventService = {
 
     try {
       const response = await api.get<EventDetailBackendDto>(`/events/${id}`);
-      return mapDetailToEventItem(response.data);
+      const event = mapDetailToEventItem(response.data);
+      const tickets = await this.getTicketTypes(id);
+      return { ...event, tickets };
     } catch {
       return getMockEventById(id) ?? null;
+    }
+  },
+
+  /**
+   * Obtiene las tarifas activas de un evento.
+   * Endpoint: GET /api/events/:eventId/ticket-types
+   */
+  async getTicketTypes(eventId: string): Promise<TicketType[]> {
+    try {
+      const response = await api.get<BackendTicketTypeDto[]>(`/events/${eventId}/ticket-types`);
+      return (response.data ?? [])
+        .filter((ticket) => ticket.status !== 'paused' && ticket.status !== 'sold_out')
+        .map((ticket) => ({
+          id: String(ticket.id),
+          name: ticket.name,
+          price: ticket.price,
+          available: ticket.availableCapacity,
+          description: ticket.zone ?? undefined,
+        }));
+    } catch {
+      return [];
     }
   },
 
