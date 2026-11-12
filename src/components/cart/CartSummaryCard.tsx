@@ -1,22 +1,25 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { formatPricePEN } from '@/data/events';
 import { useTheme } from '@/hooks/use-theme';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 
 interface CartSummaryCardProps {
   totalTickets: number;
   subtotal: number;
-  igv: number;
+  igv?: number;
   total: number;
+  isValidating?: boolean;
   onCheckout: () => void;
+}
+
+function formatPricePEN(value: number): string {
+  return `S/ ${Number(value ?? 0).toFixed(2)}`;
 }
 
 export function CartSummaryCard({
   totalTickets,
-  subtotal,
-  igv,
   total,
+  isValidating = false,
   onCheckout,
 }: CartSummaryCardProps) {
   const theme = useTheme();
@@ -35,13 +38,12 @@ export function CartSummaryCard({
 
       <View style={styles.rows}>
         <View style={styles.row}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>{`Entradas (${totalTickets}):`}</Text>
-          <Text style={[styles.value, { color: theme.text }]}>{formatPricePEN(subtotal)}</Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>IGV (18%):</Text>
-          <Text style={[styles.value, { color: theme.text }]}>{formatPricePEN(igv)}</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>
+            Total de entradas:
+          </Text>
+          <Text style={[styles.value, { color: theme.text }]}>
+            {`${totalTickets} ${totalTickets === 1 ? 'entrada' : 'entradas'}`}
+          </Text>
         </View>
 
         <View style={[styles.divider, { backgroundColor: theme.backgroundSelected }]} />
@@ -52,13 +54,22 @@ export function CartSummaryCard({
         </View>
       </View>
 
-      {/* Botón para continuar con el proceso de compra */}
+      {/* Botón para validar stock contra backend y proceder al checkout */}
       <TouchableOpacity
         activeOpacity={0.8}
+        disabled={isValidating}
         onPress={onCheckout}
-        style={[styles.checkoutBtn, { backgroundColor: eventia.primaryContainer }]}>
-        <Text style={styles.checkoutBtnText}>Proceder al Pago</Text>
-        <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+        style={[
+          styles.checkoutBtn,
+          { backgroundColor: isValidating ? '#94A3B8' : eventia.primaryContainer },
+        ]}>
+        {isValidating ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : null}
+        <Text style={styles.checkoutBtnText}>
+          {isValidating ? 'Verificando stock...' : 'Proceder al Pago'}
+        </Text>
+        {!isValidating ? <Ionicons name="arrow-forward" size={18} color="#FFFFFF" /> : null}
       </TouchableOpacity>
     </View>
   );
