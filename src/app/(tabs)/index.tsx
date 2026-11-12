@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,14 +10,16 @@ import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
-import { EVENT_CATEGORIES, EVENTS } from '@/data/events';
+import { EVENT_CATEGORIES } from '@/data/events';
+import { eventService } from '@/services/eventService';
+import type { EventItem } from '@/types/event.types';
 
 const FILTERS: readonly CategoryFilter[] = ['Todos', ...EVENT_CATEGORIES];
 
 /**
- * Home / Catálogo general de eventos (Integrante 4 · RF-04), según la guía:
- * header, buscador + orden, píldoras de categoría, hero destacado y lista
- * de eventos próximos. Cada tarjeta navega al detalle `/event/[id]`.
+ * Home / Catálogo general de eventos (Integrante 4 · RF-04).
+ * Conecta con GET /api/events del backend y convierte Page<T> a lista mediante eventMapper.
+ * Soporta búsqueda, categoría y orden ascendente/descendente.
  */
 export default function HomeCatalogScreen() {
   const theme = useTheme();
@@ -25,12 +27,29 @@ export default function HomeCatalogScreen() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('Todos');
   const [ascending, setAscending] = useState(true);
+  const [allEvents, setAllEvents] = useState<EventItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const featured = useMemo(() => EVENTS.filter((event) => event.featured), []);
+  const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await eventService.getEvents({
+        q: query.trim().length > 0 ? query : undefined,
+      });
+      setAllEvents(data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [query]);
+
+  // Carga inicial y recarga cuando cambia la búsqueda
+  useEffect(() => {
+    void fetchEvents();
+  }, [fetchEvents]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    const matches = EVENTS.filter((event) => {
+    const matches = allEvents.filter((event) => {
       const matchesCategory = category === 'Todos' || event.category === category;
       const matchesQuery =
         normalized.length === 0 ||
@@ -43,7 +62,9 @@ export default function HomeCatalogScreen() {
     return [...matches].sort((a, b) =>
       ascending ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date),
     );
-  }, [query, category, ascending]);
+  }, [allEvents, query, category, ascending]);
+
+  const featured = useMemo(() => filtered.filter((event) => event.featured), [filtered]);
 
   const showSections = query.trim().length === 0 && category === 'Todos';
   const listData = showSections
@@ -55,7 +76,7 @@ export default function HomeCatalogScreen() {
         <SafeAreaView style={styles.safeArea} edges={['bottom']}>
 
         <View style={styles.searchRow}>
-          <View style={[styles.searchBox, { backgroundColor: theme.backgroundElement }]}>
+          <View style={[styles.searchBox, { backgroundColor: theme.backgroundElement }]} >
             <TextInput
               value={query}
               onChangeText={setQuery}

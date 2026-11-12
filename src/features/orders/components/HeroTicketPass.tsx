@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { Eventia } from '@/constants/theme';
 import type { Order } from '../types/order.types';
@@ -129,11 +130,16 @@ export const HeroTicketPass: React.FC<HeroTicketPassProps> = ({ order }) => {
           onPress={() => setIsQrModalOpen(true)}
           style={styles.qrInteractiveBox}>
           <View style={styles.qrInnerBox}>
-            <Ionicons name="qr-code" size={140} color="#0B1C30" />
+            <QRCode
+              value={order.qrCode || 'EVENTIA-EMPTY'}
+              size={130}
+              backgroundColor="#FFFFFF"
+              color="#0B1C30"
+            />
           </View>
           <View style={styles.qrStatusRow}>
             <View style={styles.greenMiniDot} />
-            <Text style={styles.qrStatusText}>Código dinámico se actualiza cada 30s</Text>
+            <Text style={styles.qrStatusText}>UUID Verificado • react-native-qrcode-svg</Text>
           </View>
         </TouchableOpacity>
 
@@ -164,6 +170,8 @@ export const HeroTicketPass: React.FC<HeroTicketPassProps> = ({ order }) => {
         eventTitle={order.eventTitle}
         buyerName={order.buyerName}
         qrCode={order.qrCode}
+        ticketId={order.tickets?.[0]?.id}
+        dni={order.buyerDocument || order.tickets?.[0]?.dni}
         onClose={() => setIsQrModalOpen(false)}
       />
     </View>

@@ -5,6 +5,12 @@ import type {
   TicketSelectionItem,
   TicketTypeDto,
 } from '@/types/event.types';
+import {
+  EventDetailBackendDto,
+  EventSummaryBackendDto,
+  mapDetailToEventItem,
+  mapSummaryToEventItem,
+} from '@/utils/eventMapper';
 
 const LEGACY_SLUG_TO_ID: Record<string, number> = {
   'neon-wave-2025': 1,

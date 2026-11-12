@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -7,51 +8,110 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/use-theme';
-import { EventiaHeader } from '@/components/eventia-header';
 import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
 
 import { HeroTicketPass } from '@/features/orders/components/HeroTicketPass';
 import { WalletPassBanner } from '@/features/orders/components/WalletPassBanner';
 import { OrdersHistoryList } from '@/features/orders/components/OrdersHistoryList';
+import { TicketQrModal } from '@/features/orders/components/TicketQrModal';
 import { orderService } from '@/features/orders/services/orderService';
-import type { Order, OrderTabType } from '@/features/orders/types/order.types';
+import type { BackendTicket, Order, OrderStatus, OrderTabType } from '@/features/orders/types/order.types';
 
 export default function TicketsScreen() {
   const theme = useTheme();
+  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<OrderTabType>('upcoming');
   const [orders, setOrders] = useState<Order[]>([]);
+  const [myTickets, setMyTickets] = useState<BackendTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const loadOrders = useCallback(async () => {
+  // Filtros de historial de compras
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PAGADA' | 'PENDIENTE' | 'CANCELADA'>('ALL');
+  const [dateFilter, setDateFilter] = useState<'ALL' | 'MONTH' | 'YEAR'>('ALL');
+
+  // Modal para ver QR y nominar cualquier orden o entrada
+  const [selectedOrderForQr, setSelectedOrderForQr] = useState<Order | null>(null);
+
+  // Guard: sin sesión, redirige al login
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  const loadData = useCallback(async () => {
+    if (!isAuthenticated) return;
     try {
-      const data = await orderService.getOrders();
-      setOrders(data);
+      // 1. Cargar órdenes reales desde GET /api/orders (sin pedidos semilla)
+      const ordersData = await orderService.getOrders();
+      setOrders(ordersData);
+
+      // 2. Cargar entradas individuales desde GET /api/tickets/my
+      const ticketsData = await orderService.getMyTickets();
+      setMyTickets(ticketsData);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadOrders();
-    }, [loadOrders]),
-  );
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const onRefresh = () => {
     setIsRefreshing(true);
-    loadOrders();
+    loadData();
   };
 
+  if (!isAuthenticated || authLoading) {
+    return null;
+  }
+
+  // Filtrado de órdenes
   const upcomingOrders = orders.filter((o) => o.isUpcoming);
   const pastOrders = orders.filter((o) => !o.isUpcoming);
-  const activeHeroOrder = upcomingOrders[0];
+
+  // Si no hay órdenes marcadas como pasadas por fecha pero hay órdenes en el sistema,
+  // mostrar todas las órdenes en la pestaña de historial para permitir filtrado completo.
+  const historyOrdersSource = pastOrders.length > 0 ? pastOrders : orders;
+
+  const filteredHistoryOrders = historyOrdersSource.filter((o) => {
+    if (statusFilter !== 'ALL' && o.status !== statusFilter) {
+      return false;
+    }
+    if (dateFilter === 'MONTH') {
+      try {
+        const d = new Date(o.createdAt);
+        const now = new Date();
+        if (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear()) {
+          return false;
+        }
+      } catch {
+        // Ignorar
+      }
+    } else if (dateFilter === 'YEAR') {
+      try {
+        const d = new Date(o.createdAt);
+        const now = new Date();
+        if (d.getFullYear() !== now.getFullYear()) {
+          return false;
+        }
+      } catch {
+        // Ignorar
+      }
+    }
+    return true;
+  });
+
+  const activeHeroOrder = upcomingOrders[0] || orders[0];
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -63,8 +123,12 @@ export default function TicketsScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[Eventia.primary]} />
         }>
         <View style={styles.mainWrapper}>
-          {/* Segmented Control Tabs (Stitch Vista 8) */}
-          <View style={[styles.segmentedContainer, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]}>
+          {/* Segmented Control Tabs */}
+          <View
+            style={[
+              styles.segmentedContainer,
+              { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected },
+            ]}>
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setActiveTab('upcoming')}
@@ -83,9 +147,9 @@ export default function TicketsScreen() {
                   { color: activeTab === 'upcoming' ? '#FFFFFF' : theme.textSecondary },
                   activeTab === 'upcoming' && styles.segmentLabelActive,
                 ]}>
-                Próximos eventos
+                Mis Entradas
               </Text>
-              {upcomingOrders.length > 0 && (
+              {(upcomingOrders.length > 0 || myTickets.length > 0) && (
                 <View
                   style={[
                     styles.countPill,
@@ -96,7 +160,7 @@ export default function TicketsScreen() {
                       styles.countPillText,
                       activeTab === 'upcoming' && styles.countPillTextActive,
                     ]}>
-                    {upcomingOrders.length}
+                    {myTickets.length || upcomingOrders.length}
                   </Text>
                 </View>
               )}
@@ -120,9 +184,9 @@ export default function TicketsScreen() {
                   { color: activeTab === 'past' ? '#FFFFFF' : theme.textSecondary },
                   activeTab === 'past' && styles.segmentLabelActive,
                 ]}>
-                Pasados
+                Historial de Compras
               </Text>
-              {pastOrders.length > 0 && (
+              {orders.length > 0 && (
                 <View
                   style={[
                     styles.countPill,
@@ -133,7 +197,7 @@ export default function TicketsScreen() {
                       styles.countPillText,
                       activeTab === 'past' && styles.countPillTextActive,
                     ]}>
-                    {pastOrders.length}
+                    {orders.length}
                   </Text>
                 </View>
               )}
@@ -145,7 +209,7 @@ export default function TicketsScreen() {
             <View style={styles.tabContentCol}>
               {activeHeroOrder ? (
                 <>
-                  {/* Hero Ticket Pass Card */}
+                  {/* Hero Ticket Pass Card con QR react-native-qrcode-svg */}
                   <HeroTicketPass order={activeHeroOrder} />
 
                   {/* Wallet Pass Banner */}
@@ -158,7 +222,10 @@ export default function TicketsScreen() {
                     </View>
                   )}
                   {upcomingOrders.length > 1 && (
-                    <OrdersHistoryList orders={upcomingOrders.slice(1)} />
+                    <OrdersHistoryList
+                      orders={upcomingOrders.slice(1)}
+                      onSelectOrder={(ord) => setSelectedOrderForQr(ord)}
+                    />
                   )}
                 </>
               ) : (
@@ -170,26 +237,125 @@ export default function TicketsScreen() {
                   <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
                     Explora el catálogo de conciertos y festivales para reservar tus boletos inteligentes.
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => router.push('/')}
+                    style={styles.exploreBtn}>
+                    <Text style={styles.exploreBtnText}>Explorar Eventos</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
           ) : (
-            /* PESTAÑA PASADOS: HISTORIAL DE COMPRAS */
+            /* PESTAÑA: HISTORIAL DE COMPRAS CON FILTROS */
             <View style={styles.tabContentCol}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Historial de Compras</Text>
                 <Text style={[styles.sectionCountText, { color: theme.textSecondary }]}>
-                  {pastOrders.length} {pastOrders.length === 1 ? 'orden' : 'órdenes'}
+                  {filteredHistoryOrders.length} {filteredHistoryOrders.length === 1 ? 'orden' : 'órdenes'}
                 </Text>
               </View>
 
-              <OrdersHistoryList orders={pastOrders} />
+              {/* Filtros por Estado */}
+              <View style={styles.filterGroup}>
+                <Text style={[styles.filterGroupTitle, { color: theme.textSecondary }]}>Estado:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillsRow}>
+                  <TouchableOpacity
+                    onPress={() => setStatusFilter('ALL')}
+                    style={[styles.filterPill, statusFilter === 'ALL' && styles.filterPillActive]}>
+                    <Text style={[styles.filterPillText, statusFilter === 'ALL' && styles.filterPillTextActive]}>
+                      Todas
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setStatusFilter('PAGADA')}
+                    style={[styles.filterPill, statusFilter === 'PAGADA' && styles.filterPillActive]}>
+                    <Text style={[styles.filterPillText, statusFilter === 'PAGADA' && styles.filterPillTextActive]}>
+                      Pagadas
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setStatusFilter('PENDIENTE')}
+                    style={[styles.filterPill, statusFilter === 'PENDIENTE' && styles.filterPillActive]}>
+                    <Text style={[styles.filterPillText, statusFilter === 'PENDIENTE' && styles.filterPillTextActive]}>
+                      Pendientes
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setStatusFilter('CANCELADA')}
+                    style={[styles.filterPill, statusFilter === 'CANCELADA' && styles.filterPillActive]}>
+                    <Text style={[styles.filterPillText, statusFilter === 'CANCELADA' && styles.filterPillTextActive]}>
+                      Canceladas
+                    </Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+
+              {/* Filtros por Fecha */}
+              <View style={styles.filterGroup}>
+                <Text style={[styles.filterGroupTitle, { color: theme.textSecondary }]}>Fecha:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillsRow}>
+                  <TouchableOpacity
+                    onPress={() => setDateFilter('ALL')}
+                    style={[styles.filterPill, dateFilter === 'ALL' && styles.filterPillActive]}>
+                    <Text style={[styles.filterPillText, dateFilter === 'ALL' && styles.filterPillTextActive]}>
+                      Todo el tiempo
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setDateFilter('MONTH')}
+                    style={[styles.filterPill, dateFilter === 'MONTH' && styles.filterPillActive]}>
+                    <Text style={[styles.filterPillText, dateFilter === 'MONTH' && styles.filterPillTextActive]}>
+                      Este mes
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setDateFilter('YEAR')}
+                    style={[styles.filterPill, dateFilter === 'YEAR' && styles.filterPillActive]}>
+                    <Text style={[styles.filterPillText, dateFilter === 'YEAR' && styles.filterPillTextActive]}>
+                      Este año
+                    </Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+
+              {/* Listado filtrado */}
+              <OrdersHistoryList
+                orders={filteredHistoryOrders}
+                onSelectOrder={(ord) => setSelectedOrderForQr(ord)}
+              />
             </View>
           )}
 
           <View style={styles.bottomSpacer} />
         </View>
       </ScrollView>
+
+      {/* Modal QR y Nominación interactiva para órdenes del historial */}
+      {selectedOrderForQr && (
+        <TicketQrModal
+          visible={Boolean(selectedOrderForQr)}
+          orderNumber={selectedOrderForQr.orderNumber}
+          eventTitle={selectedOrderForQr.eventTitle}
+          buyerName={selectedOrderForQr.buyerName}
+          qrCode={selectedOrderForQr.qrCode}
+          ticketId={selectedOrderForQr.tickets?.[0]?.id}
+          dni={selectedOrderForQr.buyerDocument || selectedOrderForQr.tickets?.[0]?.dni}
+          onNominated={(newNombre, newDni) => {
+            // Actualizar estado local
+            setOrders((prev) =>
+              prev.map((o) =>
+                o.id === selectedOrderForQr.id
+                  ? { ...o, buyerName: newNombre, buyerDocument: newDni }
+                  : o
+              )
+            );
+            setSelectedOrderForQr((prev) =>
+              prev ? { ...prev, buyerName: newNombre, buyerDocument: newDni } : null
+            );
+          }}
+          onClose={() => setSelectedOrderForQr(null)}
+        />
+      )}
     </View>
   );
 }
@@ -212,9 +378,9 @@ const styles = StyleSheet.create({
   },
   segmentedContainer: {
     width: '100%',
-    backgroundColor: '#E2E8F0',
     padding: 4,
     borderRadius: 14,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -239,7 +405,6 @@ const styles = StyleSheet.create({
   segmentLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#64748B',
   },
   segmentLabelActive: {
     color: '#FFFFFF',
@@ -275,43 +440,83 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0B1C30',
   },
   sectionCountText: {
     fontSize: 12,
-    color: '#64748B',
     fontWeight: '600',
   },
+  filterGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  filterGroupTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    width: 50,
+  },
+  filterPillsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingVertical: 2,
+  },
+  filterPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  filterPillActive: {
+    backgroundColor: Eventia.primary,
+    borderColor: Eventia.primary,
+  },
+  filterPillText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  filterPillTextActive: {
+    color: '#FFFFFF',
+  },
   emptyState: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
     marginTop: 10,
   },
   emptyIconCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#0B1C30',
   },
   emptySubtitle: {
     fontSize: 13,
-    color: '#64748B',
     textAlign: 'center',
     maxWidth: 280,
     lineHeight: 18,
+  },
+  exploreBtn: {
+    backgroundColor: Eventia.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginTop: 6,
+  },
+  exploreBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 13,
   },
   bottomSpacer: {
     height: 40,

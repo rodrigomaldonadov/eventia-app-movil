@@ -1,4 +1,25 @@
-import api from './api';
+import api, { getApiRootUrl } from './api';
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  documentType?: 'DNI' | 'CE' | null;
+  cellphone?: string | null;
+}
+
+export interface LoginResponse {
+  token: string;
+  tokenType: string;
+  expiresIn: number;
+  user: AuthUser;
+}
 
 export interface RegisterPayload {
   fullName: string;
@@ -19,6 +40,16 @@ export interface RegisterResponse {
 }
 
 export const authService = {
+  /**
+   * Autentica al usuario contra el backend y devuelve el token JWT.
+   */
+  async login(data: LoginPayload): Promise<LoginResponse> {
+    const response = await api.post<LoginResponse>('/auth/login', data, {
+      baseURL: getApiRootUrl(),
+    });
+    return response.data;
+  },
+
   /**
    * Registers a new user on the Eventia backend.
    */

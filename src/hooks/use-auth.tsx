@@ -17,7 +17,12 @@ export interface UserPreferences {
 export interface User {
   id?: string;
   fullName: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
+  dni?: string;
+  documentType?: string;
+  documentNumber?: string;
   avatarUrl?: string;
   preferences?: UserPreferences;
 }
