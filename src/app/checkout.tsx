@@ -45,12 +45,12 @@ export default function CheckoutScreen() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Datos del Comprador
+  // Datos del Comprador (obtenidos del usuario autenticado sin datos fijos)
   const [buyer, setBuyer] = useState<BuyerInfo>({
-    fullName: user?.fullName || 'Daniela Morales',
-    email: user?.email || 'daniela@eventia.io',
-    documentType: 'DNI',
-    documentNumber: '41890321',
+    fullName: user?.fullName || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : ''),
+    email: user?.email || '',
+    documentType: (user?.documentType as any) || 'DNI',
+    documentNumber: user?.documentNumber || (user as any)?.dni || '',
   });
 
   // Método de pago y formulario de tarjeta
@@ -59,7 +59,9 @@ export default function CheckoutScreen() {
     cardNumber: '4532 8821 9910 8910',
     expiry: '11/28',
     cvv: '842',
-    cardHolder: user?.fullName ? user.fullName.toUpperCase() : 'DANIELA MORALES',
+    cardHolder: user?.fullName
+      ? user.fullName.toUpperCase()
+      : (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.toUpperCase().trim() : 'TITULAR DE TARJETA'),
   });
 
   const [termsAccepted, setTermsAccepted] = useState(true);
@@ -117,8 +119,15 @@ export default function CheckoutScreen() {
       return;
     }
 
-    // Redirige a la Pasarela de Pago Segura (Mercado Pago / Sandbox)
-    router.push('/payment');
+    // Redirige a la Pasarela de Pago Segura pasando los datos dinámicos del comprador y DNI
+    router.push({
+      pathname: '/payment',
+      params: {
+        buyerName: buyer.fullName.trim(),
+        buyerEmail: buyer.email.trim(),
+        buyerDni: buyer.documentNumber.trim(),
+      },
+    });
   };
 
   if (items.length === 0) {
