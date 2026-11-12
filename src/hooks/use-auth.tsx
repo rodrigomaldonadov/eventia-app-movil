@@ -12,12 +12,19 @@ export interface UserPreferences {
 }
 
 /**
+ * Rol del usuario. Internamente el backend usa USER/ORGANIZER;
+ * la app los muestra como Cliente/Organizador.
+ */
+export type UserRole = 'USER' | 'ORGANIZER';
+
+/**
  * Estructura del usuario autenticado en la aplicación.
  */
 export interface User {
   id?: string;
   fullName: string;
   email: string;
+  role?: UserRole;
   avatarUrl?: string;
   preferences?: UserPreferences;
 }
