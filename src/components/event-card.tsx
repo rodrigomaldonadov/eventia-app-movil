@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/themed-text';
 import { useAuth } from '@/hooks/use-auth';
@@ -7,7 +8,7 @@ import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Eventia, Spacing } from '@/constants/theme';
 import {
-  CATEGORY_COVER,
+  getCategoryCoverColor,
   formatPricePEN,
   formatShortDate,
   getAvailability,
@@ -75,12 +76,23 @@ export function EventCard({ event }: EventCardProps) {
         <View
           style={[
             styles.cover,
-            { backgroundColor: CATEGORY_COVER[event.category] },
+            { backgroundColor: getCategoryCoverColor(event.category) },
           ]}
         >
-          <ThemedText type="title" style={styles.coverInitial}>
-            {event.title.charAt(0)}
-          </ThemedText>
+          {event.imageUrl || event.bannerUrl ? (
+            <Image
+              source={{ uri: event.imageUrl || event.bannerUrl }}
+              style={styles.coverImage}
+              contentFit="cover"
+              transition={250}
+            />
+          ) : (
+            <ThemedText type="title" style={styles.coverInitial}>
+              {event.title.charAt(0)}
+            </ThemedText>
+          )}
+
+          <View style={styles.coverOverlay} />
 
           <View style={styles.dateBadge}>
             <ThemedText
@@ -223,6 +235,17 @@ const styles = StyleSheet.create({
     height: 176,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  coverImage: {
+    ...StyleSheet.absoluteFill,
+    width: '100%',
+    height: '100%',
+  },
+  coverOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   coverInitial: {
     color: '#FFFFFF',

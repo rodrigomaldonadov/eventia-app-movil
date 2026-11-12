@@ -22,6 +22,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
 import { eventService } from '@/services/eventService';
+import { cloudinaryService } from '@/services/cloudinaryService';
 import { EVENT_CATEGORIES } from '@/data/events';
 import type { EventCategory, TicketType } from '@/types/event.types';
 
@@ -91,16 +92,28 @@ export default function AdminEventFormScreen() {
     return isNaN(d.getMonth()) ? new Date().getMonth() : d.getMonth();
   });
 
+  const [isUploadingCloudinary, setIsUploadingCloudinary] = useState(false);
+
   const handlePickImage = async () => {
     try {
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [16, 9],
-        quality: 0.8,
+        quality: 0.85,
       });
       if (!res.canceled && res.assets && res.assets.length > 0) {
-        setImageUrl(res.assets[0].uri);
+        const localUri = res.assets[0].uri;
+        setImageUrl(localUri);
+        setIsUploadingCloudinary(true);
+        try {
+          const cloudUrl = await cloudinaryService.uploadImage(localUri);
+          setImageUrl(cloudUrl);
+        } catch {
+          // Mantener localUri si falla la subida remota
+        } finally {
+          setIsUploadingCloudinary(false);
+        }
       }
     } catch {
       Alert.alert('Error', 'No se pudo seleccionar la imagen de la galería.');
@@ -524,6 +537,18 @@ export default function AdminEventFormScreen() {
               {imageUrl ? (
                 <View style={styles.previewContainer}>
                   <Image source={{ uri: imageUrl }} style={styles.imagePreview} contentFit="cover" />
+                  {isUploadingCloudinary && (
+                    <View style={styles.uploadingOverlay}>
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Text style={styles.uploadingText}>Subiendo a Cloudinary...</Text>
+                    </View>
+                  )}
+                  {cloudinaryService.isCloudinaryUrl(imageUrl) && !isUploadingCloudinary && (
+                    <View style={styles.cloudinaryBadge}>
+                      <Ionicons name="cloud-done-outline" size={12} color="#34D399" />
+                      <Text style={styles.cloudinaryBadgeText}>Cloudinary</Text>
+                    </View>
+                  )}
                   <TouchableOpacity
                     style={styles.clearImageBtn}
                     onPress={() => setImageUrl('')}>
@@ -1031,7 +1056,38 @@ const styles = StyleSheet.create({
   galleryBtnText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
   previewContainer: { marginTop: 6, position: 'relative', borderRadius: 10, overflow: 'hidden' },
   imagePreview: { width: '100%', height: 120, borderRadius: 10 },
-  clearImageBtn: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  clearImageBtn: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
+  uploadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 10,
+  },
+  uploadingText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  cloudinaryBadge: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    backgroundColor: 'rgba(16, 185, 129, 0.9)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  cloudinaryBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
   label: { fontSize: 12, fontWeight: '700' },
   input: {
     height: 42,

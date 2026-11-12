@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -7,28 +7,25 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { EventiaHeader } from '@/components/eventia-header';
 import { MaxContentWidth, Spacing, Eventia } from '@/constants/theme';
-
-import { HeroTicketPass } from '@/features/orders/components/HeroTicketPass';
-import { WalletPassBanner } from '@/features/orders/components/WalletPassBanner';
-import { OrdersHistoryList } from '@/features/orders/components/OrdersHistoryList';
+import { PurchasedOrderCard } from '@/features/orders/components/PurchasedOrderCard';
 import { orderService } from '@/features/orders/services/orderService';
 import type { Order, OrderTabType } from '@/features/orders/types/order.types';
 
 export default function TicketsScreen() {
+  const router = useRouter();
   const theme = useTheme();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<OrderTabType>('upcoming');
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -51,9 +48,49 @@ export default function TicketsScreen() {
     loadOrders();
   };
 
-  const upcomingOrders = orders.filter((o) => o.isUpcoming);
-  const pastOrders = orders.filter((o) => !o.isUpcoming);
-  const activeHeroOrder = upcomingOrders[0];
+  // 1. Ordenar por fechas más próximas (ascendente: los eventos más cercanos en el tiempo primero)
+  const sortedOrders = useMemo(() => {
+    return [...orders].sort((a, b) => {
+      const dateA = new Date(a.eventDate).getTime() || 0;
+      const dateB = new Date(b.eventDate).getTime() || 0;
+      return dateA - dateB;
+    });
+  }, [orders]);
+
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const upcomingOrders = useMemo(() => {
+    return sortedOrders.filter((o) => {
+      const d = new Date(o.eventDate);
+      return isNaN(d.getTime()) || d >= today;
+    });
+  }, [sortedOrders, today]);
+
+  const pastOrders = useMemo(() => {
+    return sortedOrders.filter((o) => {
+      const d = new Date(o.eventDate);
+      return !isNaN(d.getTime()) && d < today;
+    });
+  }, [sortedOrders, today]);
+
+  // Expandir automáticamente el primer evento si aún no hay ninguno seleccionado
+  useEffect(() => {
+    if (activeTab === 'upcoming' && upcomingOrders.length > 0 && !expandedOrderId) {
+      setExpandedOrderId(upcomingOrders[0].id);
+    } else if (activeTab === 'past' && pastOrders.length > 0 && !expandedOrderId) {
+      setExpandedOrderId(pastOrders[0].id);
+    }
+  }, [activeTab, upcomingOrders, pastOrders]);
+
+  const toggleExpand = (orderId: string) => {
+    setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
+  };
+
+  const currentList = activeTab === 'upcoming' ? upcomingOrders : pastOrders;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -65,11 +102,24 @@ export default function TicketsScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[Eventia.primary]} />
         }>
         <View style={styles.mainWrapper}>
-          {/* Segmented Control Tabs (Stitch Vista 8) */}
+          {/* Header de sección */}
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.screenTitle}>Mis Entradas y Eventos</Text>
+              <Text style={styles.screenSubtitle}>
+                {sortedOrders.length} {sortedOrders.length === 1 ? 'evento comprado' : 'eventos comprados'} • Ordenados por fecha más próxima
+              </Text>
+            </View>
+          </View>
+
+          {/* Segmented Control Tabs */}
           <View style={[styles.segmentedContainer, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]}>
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => setActiveTab('upcoming')}
+              onPress={() => {
+                setActiveTab('upcoming');
+                if (upcomingOrders.length > 0) setExpandedOrderId(upcomingOrders[0].id);
+              }}
               style={[
                 styles.segmentTab,
                 activeTab === 'upcoming' && styles.segmentTabActive,
@@ -106,7 +156,10 @@ export default function TicketsScreen() {
 
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => setActiveTab('past')}
+              onPress={() => {
+                setActiveTab('past');
+                if (pastOrders.length > 0) setExpandedOrderId(pastOrders[0].id);
+              }}
               style={[
                 styles.segmentTab,
                 activeTab === 'past' && styles.segmentTabActive,
@@ -142,50 +195,40 @@ export default function TicketsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* CONTENIDO SEGÚN PESTAÑA */}
-          {activeTab === 'upcoming' ? (
-            <View style={styles.tabContentCol}>
-              {activeHeroOrder ? (
-                <>
-                  {/* Hero Ticket Pass Card */}
-                  <HeroTicketPass order={activeHeroOrder} />
-
-                  {/* Wallet Pass Banner */}
-                  <WalletPassBanner />
-
-                  {/* Sección: Otras órdenes recientes */}
-                  {upcomingOrders.length > 1 && (
-                    <View style={styles.sectionHeaderRow}>
-                      <Text style={[styles.sectionTitle, { color: theme.text }]}>Otras entradas activas</Text>
-                    </View>
-                  )}
-                  {upcomingOrders.length > 1 && (
-                    <OrdersHistoryList orders={upcomingOrders.slice(1)} />
-                  )}
-                </>
-              ) : (
-                <View style={[styles.emptyState, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]}>
-                  <View style={[styles.emptyIconCircle, { backgroundColor: theme.backgroundSelected }]}>
-                    <Ionicons name="ticket-outline" size={42} color={theme.textSecondary} />
-                  </View>
-                  <Text style={[styles.emptyTitle, { color: theme.text }]}>No tienes entradas activas</Text>
-                  <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-                    Explora el catálogo de conciertos y festivales para reservar tus boletos inteligentes.
-                  </Text>
-                </View>
-              )}
+          {/* LISTADO DE EVENTOS COMPRADOS: Expandibles al seleccionarlos */}
+          {currentList.length > 0 ? (
+            <View style={styles.ordersListContainer}>
+              {currentList.map((order) => (
+                <PurchasedOrderCard
+                  key={order.id}
+                  order={order}
+                  isExpanded={expandedOrderId === order.id}
+                  onToggle={() => toggleExpand(order.id)}
+                />
+              ))}
             </View>
           ) : (
-            /* PESTAÑA PASADOS: HISTORIAL DE COMPRAS */
-            <View style={styles.tabContentCol}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>Historial de Compras</Text>
-                <Text style={[styles.sectionCountText, { color: theme.textSecondary }]}>
-                  {pastOrders.length} {pastOrders.length === 1 ? 'orden' : 'órdenes'}
-                </Text>
+            /* Estado Vacío */
+            <View style={[styles.emptyState, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]}>
+              <View style={[styles.emptyIconCircle, { backgroundColor: theme.backgroundSelected }]}>
+                <Ionicons name="ticket-outline" size={42} color={theme.textSecondary} />
               </View>
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                {activeTab === 'upcoming' ? 'No tienes entradas activas' : 'Sin compras pasadas'}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                {activeTab === 'upcoming'
+                  ? 'Explora el catálogo de conciertos, festivales y eventos para comprar tus boletos inteligentes.'
+                  : 'Aquí figurarán los eventos concluidos a los que hayas asistido.'}
+              </Text>
 
-              <OrdersHistoryList orders={pastOrders} />
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => router.push('/')}
+                style={styles.exploreBtn}>
+                <Ionicons name="sparkles-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.exploreBtnText}>Explorar Catálogo</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -212,14 +255,31 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     gap: 14,
   },
+  headerRow: {
+    paddingHorizontal: 2,
+    paddingTop: 4,
+  },
+  screenTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+  },
+  screenSubtitle: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
   segmentedContainer: {
     width: '100%',
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#1E2024',
     padding: 4,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    borderWidth: 1,
+    borderColor: '#2E3135',
   },
   segmentTab: {
     flex: 1,
@@ -250,7 +310,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#374151',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -260,60 +320,59 @@ const styles = StyleSheet.create({
   countPillText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#475569',
+    color: '#CBD5E1',
   },
   countPillTextActive: {
     color: '#FFFFFF',
   },
-  tabContentCol: {
-    gap: 14,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 4,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0B1C30',
-  },
-  sectionCountText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '600',
+  ordersListContainer: {
+    gap: 12,
   },
   emptyState: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2024',
     borderRadius: 20,
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#2E3135',
     marginTop: 10,
   },
   emptyIconCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#262930',
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#0B1C30',
+    color: '#FFFFFF',
   },
   emptySubtitle: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#94A3B8',
     textAlign: 'center',
     maxWidth: 280,
     lineHeight: 18,
+  },
+  exploreBtn: {
+    marginTop: 6,
+    backgroundColor: Eventia.primary,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  exploreBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   bottomSpacer: {
     height: 40,

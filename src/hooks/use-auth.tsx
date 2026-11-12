@@ -62,8 +62,9 @@ function isSession(value: unknown): value is Session {
     typeof session.token === 'string' &&
     session.token.length > 0 &&
     !!session.user &&
-    typeof session.user.fullName === 'string' &&
-    typeof session.user.email === 'string'
+    typeof session.user === 'object' &&
+    typeof session.user.email === 'string' &&
+    session.user.email.length > 0
   );
 }
 
@@ -91,6 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (stored) {
           const parsed: unknown = JSON.parse(stored);
           if (isSession(parsed)) {
+            if (!parsed.user.fullName || !parsed.user.fullName.trim()) {
+              parsed.user.fullName = parsed.user.email.split('@')[0];
+            }
             if (active) setSession(parsed);
           } else {
             await AsyncStorage.removeItem(STORAGE_KEY);

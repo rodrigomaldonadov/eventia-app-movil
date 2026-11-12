@@ -47,13 +47,13 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
           </View>
           <View style={styles.methodInfo}>
             <View style={styles.badgeLine}>
-              <Text style={styles.methodName}>Mercado Pago / Tarjetas</Text>
+              <Text style={styles.methodName}>Culqi / Tarjetas</Text>
               <View style={styles.activeTagBadge}>
                 <Text style={styles.activeTagText}>RECOMENDADO</Text>
               </View>
             </View>
             <Text style={styles.methodDesc}>
-              Crédito y Débito hasta 6 cuotas sin interés
+              Crédito y Débito (Visa, Mastercard, Amex)
             </Text>
           </View>
         </View>

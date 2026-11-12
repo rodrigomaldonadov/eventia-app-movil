@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/themed-text';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { Spacing } from '@/constants/theme';
-import { CATEGORY_COVER, formatShortDate, type EventItem } from '@/data/events';
+import { getCategoryCoverColor, formatShortDate, type EventItem } from '@/data/events';
 
 interface HeroCardProps {
   event: EventItem;
@@ -25,9 +26,17 @@ export function HeroCard({ event }: HeroCardProps) {
       onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
       style={({ pressed }) => [
         styles.hero,
-        { backgroundColor: CATEGORY_COVER[event.category] },
+        { backgroundColor: getCategoryCoverColor(event.category) },
         pressed && styles.pressed,
       ]}>
+      {event.imageUrl || event.bannerUrl ? (
+        <Image
+          source={{ uri: event.imageUrl || event.bannerUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={250}
+        />
+      ) : null}
       <View style={styles.overlay} />
       <View style={styles.content}>
         <View style={styles.categoryPill}>
@@ -47,9 +56,11 @@ export function HeroCard({ event }: HeroCardProps) {
           </ThemedText>
         </View>
       </View>
-      <ThemedText type="title" style={styles.watermark}>
-        {event.title.charAt(0)}
-      </ThemedText>
+      {!event.imageUrl && !event.bannerUrl && (
+        <ThemedText type="title" style={styles.watermark}>
+          {event.title.charAt(0)}
+        </ThemedText>
+      )}
     </Pressable>
   );
 }

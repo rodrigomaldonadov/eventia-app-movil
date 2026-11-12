@@ -20,6 +20,8 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
+import { orderService } from '@/features/orders/services/orderService';
+import type { Order } from '@/features/orders/types/order.types';
 import {
   actualizarAvatarUsuario,
   actualizarContrasenaUsuario,
@@ -57,6 +59,7 @@ export default function ProfileScreen() {
   const [preferencias, setPreferencias] = useState<PreferenciasPerfil>(
     PREFERENCIAS_POR_DEFECTO,
   );
+  const [orders, setOrders] = useState<Order[]>([]);
 
   // Redirigir al login si no hay sesión activa
   useEffect(() => {
@@ -65,7 +68,7 @@ export default function ProfileScreen() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Cargar datos y preferencias del usuario autenticado
+  // Cargar datos, preferencias y órdenes reales del usuario autenticado
   useEffect(() => {
     async function cargarInformacionUsuario() {
       if (user?.email) {
@@ -81,6 +84,13 @@ export default function ProfileScreen() {
 
         const pref = await obtenerPreferenciasUsuario(user.email);
         setPreferencias(pref);
+
+        try {
+          const misOrdenes = await orderService.getOrders(user.email);
+          setOrders(misOrdenes);
+        } catch {
+          // fallback
+        }
       }
     }
     cargarInformacionUsuario();
@@ -147,6 +157,21 @@ export default function ProfileScreen() {
     return null;
   }
 
+  // Cálculos reales basados en órdenes del usuario
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcomingOrders = orders
+    .filter((o) => {
+      const d = new Date(o.eventDate);
+      return isNaN(d.getTime()) || d >= today;
+    })
+    .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+
+  const totalTicketsActivos = upcomingOrders.reduce((sum, o) => sum + (o.totalTickets || 1), 0);
+  const totalEventosComprados = orders.length;
+  const proximoEvento = upcomingOrders[0];
+
   const textoCategorias =
     preferencias.categoriasFavoritas && preferencias.categoriasFavoritas.length > 0
       ? preferencias.categoriasFavoritas.slice(0, 2).join(', ') +
@@ -170,13 +195,18 @@ export default function ProfileScreen() {
             alPresionarCambiarFoto={abrirModalFoto}
           />
 
-          <FilaEstadisticasPerfil eventosAsistidos={4} ticketsActivos={2} />
-
-          <BannerProximoEvento
-            nombreEvento="Sónar Festival • Barcelona"
-            fechaHora="Viernes, 18 Julio • 20:30 hrs"
-            recinto="Parc del Fòrum"
+          <FilaEstadisticasPerfil
+            eventosAsistidos={totalEventosComprados}
+            ticketsActivos={totalTicketsActivos}
           />
+
+          {proximoEvento ? (
+            <BannerProximoEvento
+              nombreEvento={proximoEvento.eventTitle}
+              fechaHora={`${proximoEvento.eventDate} ${proximoEvento.eventTime ? `• ${proximoEvento.eventTime}` : ''}`}
+              recinto={proximoEvento.eventVenue}
+            />
+          ) : null}
 
           {isAdmin && (
             <ProfileSectionCard title="Administración Eventia">
@@ -219,14 +249,7 @@ export default function ProfileScreen() {
               icon="lock-closed-outline"
               title="Cambiar contraseña"
               subtitle="Seguridad de la cuenta"
-              showDivider
               onPress={abrirModalCambiarContrasena}
-            />
-            <ProfileOptionRow
-              icon="card-outline"
-              title="Métodos de pago"
-              valueText="Visa •••• 4092"
-              onPress={() => { }}
             />
           </ProfileSectionCard>
 

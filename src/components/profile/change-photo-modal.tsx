@@ -3,7 +3,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -16,9 +18,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useEventiaTheme } from '@/hooks/use-eventia-theme';
 import { useTheme } from '@/hooks/use-theme';
-
-const FOTO_POR_DEFECTO =
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80';
+import { cloudinaryService } from '@/services/cloudinaryService';
 
 export interface PropiedadesModalCambiarFotoPerfil {
   visible: boolean;
@@ -27,9 +27,6 @@ export interface PropiedadesModalCambiarFotoPerfil {
   alGuardarNuevaFoto: (nuevaFotoUrl: string) => Promise<void> | void;
 }
 
-/**
- * Modal para cambiar la foto de perfil
- */
 export function ModalCambiarFotoPerfil({
   visible,
   fotoActual,
@@ -39,19 +36,21 @@ export function ModalCambiarFotoPerfil({
   const tema = useTheme();
   const temaEventia = useEventiaTheme();
 
-  const [fotoSeleccionada, setFotoSeleccionada] = useState(
-    fotoActual || FOTO_POR_DEFECTO,
+  const [fotoSeleccionada, setFotoSeleccionada] = useState<string>(
+    fotoActual || '',
   );
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [cargandoImagen, setCargandoImagen] = useState(false);
+  const [permisoCamaraDenegado, setPermisoCamaraDenegado] = useState(false);
 
   useEffect(() => {
     if (visible) {
-      setFotoSeleccionada(fotoActual || FOTO_POR_DEFECTO);
+      setFotoSeleccionada(fotoActual || '');
       setErrorCarga(null);
       setGuardando(false);
       setCargandoImagen(false);
+      setPermisoCamaraDenegado(false);
     }
   }, [visible, fotoActual]);
 
@@ -88,24 +87,59 @@ export function ModalCambiarFotoPerfil({
     }
   };
 
+  /**
+   * Sistema de gestión y solicitud de permisos para acceder a la cámara
+   */
   const tomarFotoConCamara = async () => {
     try {
       setErrorCarga(null);
       setCargandoImagen(true);
 
       if (Platform.OS !== 'web') {
-        const estadoPermisos = await ImagePicker.requestCameraPermissionsAsync();
-        if (!estadoPermisos.granted) {
-          setErrorCarga('Se requieren permisos de cámara para tomar una foto.');
-          setCargandoImagen(false);
-          return;
+        // 1. Verificar estado actual de permisos
+        const permisoActual = await ImagePicker.getCameraPermissionsAsync();
+        let concedido = permisoActual.granted;
+
+        if (!concedido) {
+          // Si el sistema permite volver a solicitar el permiso de cámara
+          if (permisoActual.canAskAgain) {
+            const respuestaSolicitud = await ImagePicker.requestCameraPermissionsAsync();
+            concedido = respuestaSolicitud.granted;
+          }
+
+          // Si el usuario denegó o está permanentemente bloqueado
+          if (!concedido) {
+            setPermisoCamaraDenegado(true);
+            setErrorCarga('Se requiere permiso para acceder a la cámara y tomar tu foto.');
+            setCargandoImagen(false);
+
+            Alert.alert(
+              'Permiso de Cámara Requerido',
+              'Eventia necesita acceso a la cámara para tomar tu nueva foto de perfil. Puedes habilitar el permiso directamente en los Ajustes del dispositivo.',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                  text: 'Abrir Ajustes',
+                  onPress: () => {
+                    Linking.openSettings().catch(() => {});
+                  },
+                },
+              ]
+            );
+            return;
+          }
         }
       }
 
+      setPermisoCamaraDenegado(false);
+
+      // 2. Disparar cámara con configuración optimizada para retrato/perfil
       const resultado = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.85,
+        cameraType: ImagePicker.CameraType.front,
       });
 
       if (!resultado.canceled && resultado.assets && resultado.assets.length > 0) {
@@ -114,7 +148,11 @@ export function ModalCambiarFotoPerfil({
       }
     } catch (error: any) {
       console.error('[ModalCambiarFoto] Error al abrir la cámara:', error);
-      setErrorCarga('No se pudo tomar la foto con la cámara.');
+      setErrorCarga(
+        Platform.OS === 'web'
+          ? 'No se pudo acceder a la cámara en el navegador. Verifica los permisos de tu navegador.'
+          : 'No se pudo tomar la foto con la cámara.'
+      );
     } finally {
       setCargandoImagen(false);
     }
@@ -123,7 +161,18 @@ export function ModalCambiarFotoPerfil({
   const confirmarCambioDeFoto = async () => {
     try {
       setGuardando(true);
-      await alGuardarNuevaFoto(fotoSeleccionada);
+      let urlFinal = fotoSeleccionada;
+
+      // Si la foto es un archivo local (tomado de la cámara o galería), subirlo a Cloudinary
+      if (fotoSeleccionada && !fotoSeleccionada.startsWith('http')) {
+        try {
+          urlFinal = await cloudinaryService.uploadImage(fotoSeleccionada);
+        } catch (uploadErr) {
+          console.warn('[ModalCambiarFoto] Cloudinary fallback a URI local:', uploadErr);
+        }
+      }
+
+      await alGuardarNuevaFoto(urlFinal);
       alCerrar();
     } catch (error) {
       console.error('[ModalCambiarFoto] Error al guardar la nueva foto:', error);
@@ -183,16 +232,35 @@ export function ModalCambiarFotoPerfil({
                   <View style={estilos.cargadorImagen}>
                     <ActivityIndicator size="small" color={temaEventia.primary} />
                   </View>
-                ) : (
+                ) : fotoSeleccionada ? (
                   <Image
                     source={{ uri: fotoSeleccionada }}
                     style={estilos.imagenPrevisualizacion}
                   />
+                ) : (
+                  <View
+                    style={[
+                      estilos.imagenPrevisualizacion,
+                      { backgroundColor: '#312E81', alignItems: 'center', justifyContent: 'center' },
+                    ]}>
+                    <Ionicons name="person" size={54} color="#A5B4FC" />
+                  </View>
                 )}
               </View>
               <ThemedText type="small" themeColor="textSecondary">
                 Vista previa de tu avatar
               </ThemedText>
+
+              {fotoSeleccionada ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setFotoSeleccionada('')}
+                  style={{ marginTop: 8, paddingVertical: 4 }}>
+                  <ThemedText type="small" style={{ color: '#EF4444', textAlign: 'center', fontWeight: '600' }}>
+                    Quitar foto y usar icono por defecto
+                  </ThemedText>
+                </Pressable>
+              ) : null}
             </View>
 
             <ThemedText type="smallBold" style={estilos.etiquetaSeccion}>
@@ -240,6 +308,30 @@ export function ModalCambiarFotoPerfil({
                 </View>
               </Pressable>
             </View>
+
+            {/* Aviso informativo de permiso de cámara si fue denegado */}
+            {permisoCamaraDenegado ? (
+              <View style={estilos.alertaPermisos}>
+                <Ionicons name="videocam-off-outline" size={20} color="#D97706" />
+                <View style={{ flex: 1 }}>
+                  <ThemedText type="smallBold" style={{ color: '#B45309' }}>
+                    Permiso de cámara requerido
+                  </ThemedText>
+                  <ThemedText type="small" style={{ color: '#92400E', fontSize: 11 }}>
+                    Habilita el acceso en los Ajustes del dispositivo para tomar fotos.
+                  </ThemedText>
+                </View>
+                {Platform.OS !== 'web' ? (
+                  <Pressable
+                    onPress={() => Linking.openSettings().catch(() => {})}
+                    style={estilos.botonAbrirAjustes}>
+                    <ThemedText type="smallBold" style={{ color: '#FFFFFF', fontSize: 11 }}>
+                      Ajustes
+                    </ThemedText>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
 
             <View style={estilos.filaBotones}>
               <Pressable
@@ -375,6 +467,23 @@ const estilos = StyleSheet.create({
   },
   textoAccionCarga: {
     fontSize: 12,
+  },
+  alertaPermisos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    marginBottom: Spacing.four,
+  },
+  botonAbrirAjustes: {
+    backgroundColor: '#D97706',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
   filaBotones: {
     flexDirection: 'row',

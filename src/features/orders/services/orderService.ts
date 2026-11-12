@@ -124,20 +124,31 @@ export const orderService = {
             const eventDate = firstTicket?.eventDate || 'Fecha por confirmar';
             const eventVenue = firstTicket?.eventLocation || 'Lima, Perú';
 
-            const items: CartItem[] = (bo.tickets && bo.tickets.length > 0)
-              ? bo.tickets.map((t) => ({
-                  id: String(t.id),
-                  eventId: 'evt_db',
-                  eventTitle: t.eventTitle,
-                  eventDate: t.eventDate,
-                  eventVenue: t.eventLocation,
-                  ticketId: String(t.id),
-                  ticketName: t.ticketTypeName,
-                  price: t.price,
-                  quantity: 1,
-                  available: 0,
-                }))
-              : [];
+            // Agrupar tickets por tipo para mostrar cantidades consolidadas (ej. 2x General)
+            const groupedItemsMap = new Map<string, CartItem>();
+            if (bo.tickets && bo.tickets.length > 0) {
+              for (const t of bo.tickets) {
+                const key = t.ticketTypeName || 'Entrada';
+                const existing = groupedItemsMap.get(key);
+                if (existing) {
+                  existing.quantity += 1;
+                } else {
+                  groupedItemsMap.set(key, {
+                    id: String(t.id),
+                    eventId: 'evt_db',
+                    eventTitle: t.eventTitle,
+                    eventDate: t.eventDate,
+                    eventVenue: t.eventLocation,
+                    ticketId: String(t.id),
+                    ticketName: t.ticketTypeName,
+                    price: t.price,
+                    quantity: 1,
+                    available: 0,
+                  });
+                }
+              }
+            }
+            const items: CartItem[] = Array.from(groupedItemsMap.values());
 
             const totalTickets = bo.tickets?.length || 1;
             const subtotal = Math.round((bo.totalAmount / 1.18) * 100) / 100;

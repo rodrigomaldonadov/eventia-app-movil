@@ -321,6 +321,11 @@ export async function requestPasswordReset(email: string): Promise<string | null
   return code;
 }
 
+export function setLocalResetCode(email: string, code: string): void {
+  const normEmail = email.trim().toLowerCase();
+  resetRequests.set(normEmail, { code, expiresAt: Date.now() + 15 * 60_000, attempts: 0 });
+}
+
 export async function resetPassword(email: string, code: string, newPassword: string): Promise<void> {
   const normEmail = email.trim().toLowerCase();
   const request = resetRequests.get(normEmail);
@@ -346,6 +351,22 @@ export async function resetPassword(email: string, code: string, newPassword: st
     await saveUsersInternal(users);
   });
   resetRequests.delete(normEmail);
+}
+
+/**
+ * Restablece directamente la contraseña para sincronizar almacenamiento local
+ */
+export async function directResetPassword(email: string, newPassword: string): Promise<void> {
+  const normEmail = email.trim().toLowerCase();
+  await withWriteLock(async () => {
+    const users = await readUsersInternal();
+    const user = users.find((item) => item.email.toLowerCase() === normEmail);
+    if (user) {
+      user.salt = Crypto.randomUUID();
+      user.passwordHash = await hashPassword(newPassword, user.salt);
+      await saveUsersInternal(users);
+    }
+  });
 }
 
 /**
