@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   Alert,
   ScrollView,
@@ -17,6 +18,8 @@ import { useCart } from '@/hooks/use-cart';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { CartItemCard } from '@/components/cart/CartItemCard';
 import { CartSummaryCard } from '@/components/cart/CartSummaryCard';
+import { ReservationTimer } from '@/features/checkout/components/ReservationTimer';
+import type { CartItem } from '@/types/cart.types';
 
 export default function CartScreen() {
   const router = useRouter();
@@ -29,11 +32,54 @@ export default function CartScreen() {
     subtotal,
     igv,
     total,
+    isValidatingStock,
     updateQuantity,
     removeItem,
+    validateCartStock,
   } = useCart();
 
-  const handleCheckout = () => {
+  // Sincroniza el stock de los items del carrito con el backend al entrar a la vista
+  useEffect(() => {
+    if (items.length > 0) {
+      validateCartStock();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Aumenta la cantidad de una entrada verificando el stock y el máximo por compra
+  const handleIncrementItem = (item: CartItem) => {
+    const available = item.availableCapacity ?? item.available ?? 0;
+    const maxPerTicket = item.maxPerPurchase ?? 10;
+
+    if (totalTickets >= 10) {
+      Alert.alert('Límite por compra', 'Solo se pueden comprar hasta 10 entradas por compra.');
+      return;
+    }
+
+    if (item.quantity >= maxPerTicket) {
+      Alert.alert('Límite por tarifa', `Solo se pueden comprar hasta ${maxPerTicket} entradas de "${item.ticketName}".`);
+      return;
+    }
+
+    if (item.quantity >= available) {
+      Alert.alert('Límite de stock', `Solo quedan ${available} entradas disponibles para "${item.ticketName}".`);
+      return;
+    }
+
+    updateQuantity(item.id, item.quantity + 1);
+  };
+
+  // Verifica el stock en el backend y redirige al checkout si la sesión está activa
+  const handleCheckout = async () => {
+    const stockCheck = await validateCartStock();
+    if (!stockCheck.valid) {
+      Alert.alert(
+        'Disponibilidad de stock',
+        stockCheck.message ?? 'Algunas entradas ya no cuentan con stock suficiente. Ajusta las cantidades en tu carrito.',
+      );
+      return;
+    }
+
     if (!isAuthenticated) {
       Alert.alert(
         'Inicia sesión para continuar',
@@ -48,12 +94,11 @@ export default function CartScreen() {
                 params: { returnUrl: '/checkout' },
               }),
           },
-        ]
+        ],
       );
       return;
     }
 
-    // Redirige al flujo de checkout seguro (Módulo 6: Compras)
     router.push('/checkout');
   };
 
@@ -61,7 +106,6 @@ export default function CartScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Header Superior */}
       <View style={[styles.topBar, { backgroundColor: theme.background, borderBottomColor: theme.backgroundSelected }]}>
         <View style={styles.topBarInner}>
           <TouchableOpacity
@@ -82,7 +126,6 @@ export default function CartScreen() {
       </View>
 
       {items.length === 0 ? (
-        /* Estado Vacío */
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconCircle, { backgroundColor: theme.backgroundSelected }]}>
             <Ionicons name="cart-outline" size={48} color={theme.textSecondary} />
@@ -102,30 +145,39 @@ export default function CartScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        /* Lista de Entradas en el Carrito */
         <ScrollView
           style={styles.scroll}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}>
           <View style={styles.mainWrapper}>
+            <ReservationTimer
+              initialMinutes={15}
+              onExpire={() => {
+                Alert.alert(
+                  'Tiempo de reserva concluido',
+                  'El tiempo estimado de reserva ha finalizado. Verifica la disponibilidad al proceder al pago.',
+                );
+              }}
+            />
+
             <View style={styles.itemsList}>
               {items.map((item) => (
                 <CartItemCard
                   key={item.id}
                   item={item}
-                  onIncrement={() => updateQuantity(item.id, item.quantity + 1)}
+                  onIncrement={() => handleIncrementItem(item)}
                   onDecrement={() => updateQuantity(item.id, item.quantity - 1)}
                   onRemove={() => removeItem(item.id)}
                 />
               ))}
             </View>
 
-            {/* Resumen de la compra */}
             <CartSummaryCard
               totalTickets={totalTickets}
               subtotal={subtotal}
               igv={igv}
               total={total}
+              isValidating={isValidatingStock}
               onCheckout={handleCheckout}
             />
           </View>
