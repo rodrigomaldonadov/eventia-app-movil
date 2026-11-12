@@ -20,6 +20,8 @@ const getBaseUrl = (): string => {
   return 'http://localhost:8080/api';
 };
 
+export const getApiRootUrl = (): string => getBaseUrl().replace(/\/api\/?$/, '');
+
 export const api = axios.create({
   baseURL: getBaseUrl(),
   timeout: 10000,
